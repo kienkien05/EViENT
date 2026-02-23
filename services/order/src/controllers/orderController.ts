@@ -295,15 +295,16 @@ export const validateQR = asyncHandler(async (req: Request, res: Response) => {
 
   const ticket = await Ticket.findOne({ ticketCode: ticket_code });
   if (!ticket) {
-    return respond.error(res, 'Ticket not found', 404);
+    return respond.error(res, 'Không tìm thấy vé với mã này', 404);
   }
 
   if (ticket.status === 'cancelled') {
-    return respond.error(res, 'Ticket has been cancelled', 400);
+    return respond.error(res, 'Vé này đã bị huỷ', 400);
   }
 
   if (ticket.status === 'used') {
-    return respond.error(res, `Ticket already used at ${ticket.usedAt?.toISOString()}`, 400);
+    const usedTime = ticket.usedAt ? new Date(ticket.usedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : 'N/A';
+    return respond.error(res, `Vé đã được sử dụng lúc ${usedTime}`, 400);
   }
 
   // Check event timing (if snapshot available)
@@ -314,7 +315,30 @@ export const validateQR = asyncHandler(async (req: Request, res: Response) => {
     const checkInStart = new Date(eventStart.getTime() - checkInWindowHours * 60 * 60 * 1000);
 
     if (now < checkInStart) {
-      return respond.error(res, `Check-in not yet open. Opens ${checkInStart.toISOString()}`, 400);
+      const openTime = checkInStart.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+      return respond.error(res, `Chưa đến giờ check-in. Mở cửa lúc ${openTime}`, 400);
+    }
+  }
+
+  // Backfill buyerSnapshot if missing (legacy tickets)
+  const hasBuyerInfo = ticket.buyerSnapshot && ticket.buyerSnapshot.fullName;
+  if (!hasBuyerInfo && ticket.userId) {
+    try {
+      const axios = (await import('axios')).default;
+      const authUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+      const { data: userData } = await axios.get(`${authUrl}/api/users/${ticket.userId.toString()}`, {
+        headers: { Authorization: req.headers.authorization || '' },
+      });
+      if (userData?.data) {
+        const user = userData.data;
+        ticket.buyerSnapshot = {
+          fullName: user.full_name || user.fullName || '',
+          email: user.email || '',
+        };
+        logger.info(`Backfilled buyerSnapshot for ticket ${ticket.ticketCode}: ${user.full_name || user.fullName}`);
+      }
+    } catch (err: any) {
+      logger.warn('Could not fetch buyer info for backfill:', err.message);
     }
   }
 
@@ -326,18 +350,42 @@ export const validateQR = asyncHandler(async (req: Request, res: Response) => {
   respond.successWithMessage(res, {
     ticket: transformTicket(ticket.toObject()),
     check_in_time: ticket.usedAt.toISOString(),
-  }, 'Check-in successful');
+  }, 'Check-in thành công!');
 });
 
 /**
  * GET /tickets/info/:code - Preview ticket info without check-in (admin)
  */
 export const getTicketInfo = asyncHandler(async (req: Request, res: Response) => {
-  const ticket = await Ticket.findOne({ ticketCode: req.params.code }).lean();
+  const ticket = await Ticket.findOne({ ticketCode: req.params.code });
   if (!ticket) {
-    return respond.notFound(res, 'Ticket not found');
+    return respond.notFound(res, 'Không tìm thấy vé với mã này');
   }
-  respond.success(res, transformTicket(ticket));
+
+  // Backfill buyerSnapshot if missing (legacy tickets)
+  const hasBuyer = ticket.buyerSnapshot && ticket.buyerSnapshot.fullName;
+  if (!hasBuyer && ticket.userId) {
+    try {
+      const axios = (await import('axios')).default;
+      const authUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+      const { data: userData } = await axios.get(`${authUrl}/api/users/${ticket.userId.toString()}`, {
+        headers: { Authorization: req.headers.authorization || '' },
+      });
+      if (userData?.data) {
+        const user = userData.data;
+        ticket.buyerSnapshot = {
+          fullName: user.full_name || user.fullName || '',
+          email: user.email || '',
+        };
+        await ticket.save();
+        logger.info(`Backfilled buyerSnapshot for ticket ${ticket.ticketCode}: ${user.full_name || user.fullName}`);
+      }
+    } catch (err: any) {
+      logger.warn('Could not fetch buyer info for backfill:', err.message);
+    }
+  }
+
+  respond.success(res, transformTicket(ticket.toObject()));
 });
 
 /**

@@ -16,7 +16,7 @@ import SeatMap, { Seat, Room } from '@/components/ui/SeatMap'
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const queryClient = useQueryClient()
   
   const [showBuyModal, setShowBuyModal] = useState(false)
@@ -259,6 +259,10 @@ export default function EventDetailPage() {
         event_id: id,
         items,
         seat_assignments: seat_assignments.length > 0 ? seat_assignments : undefined,
+        buyer_info: user ? {
+          fullName: user.full_name,
+          email: user.email,
+        } : undefined,
         event_snapshot: {
           title: event.title,
           startTime: event.start_time || event.startTime,
