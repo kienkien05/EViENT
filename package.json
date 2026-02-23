@@ -1,0 +1,39 @@
+{
+  "name": "evient-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EViENT - Event Management System (Microservices)",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "frontend"
+  ],
+  "scripts": {
+    "predev": "npm run build:shared",
+    "build:shared": "cd packages/shared && npm run build",
+    "dev:gateway": "ts-node-dev -r dotenv/config --project services/gateway/tsconfig.json --respawn --transpile-only services/gateway/src/server.ts",
+    "dev:auth": "ts-node-dev -r dotenv/config --project services/auth/tsconfig.json --respawn --transpile-only services/auth/src/server.ts",
+    "dev:event": "ts-node-dev -r dotenv/config --project services/event/tsconfig.json --respawn --transpile-only services/event/src/server.ts",
+    "dev:order": "ts-node-dev -r dotenv/config --project services/order/tsconfig.json --respawn --transpile-only services/order/src/server.ts",
+    "dev:notification": "ts-node-dev -r dotenv/config --project services/notification/tsconfig.json --respawn --transpile-only services/notification/src/server.ts",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:services": "concurrently -n gw,auth,evt,ord,ntf -c blue,green,yellow,magenta,cyan \"npm:dev:gateway\" \"npm:dev:auth\" \"npm:dev:event\" \"npm:dev:order\" \"npm:dev:notification\"",
+    "dev": "concurrently -n services,frontend -c blue,green \"npm:dev:services\" \"npm:dev:frontend\"",
+    "build": "npm run build:shared && concurrently \"cd services/gateway && npm run build\" \"cd services/auth && npm run build\" \"cd services/event && npm run build\" \"cd services/order && npm run build\" \"cd services/notification && npm run build\" \"cd frontend && npm run build\"",
+    "seed": "ts-node -r dotenv/config scripts/seed.ts",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose up -d --build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "concurrently": "^8.2.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.3.1"
+  }
+}

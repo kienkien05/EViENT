@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # ==================== MongoDB ====================
+  mongodb:
+    image: mongo:7
+    container_name: evient-mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: evient_auth
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== MailHog ====================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: evient-mailhog
+    restart: unless-stopped
+    ports:
+      - '1025:1025'   # SMTP
+      - '8025:8025'   # Web UI
+
+  # ==================== API Gateway ====================
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: evient-gateway
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      GATEWAY_PORT: 3000
+      AUTH_SERVICE_URL: http://auth:3001
+      EVENT_SERVICE_URL: http://event:3002
+      ORDER_SERVICE_URL: http://order:3003
+      NOTIFICATION_SERVICE_URL: http://notification:3004
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    depends_on:
+      - auth
+      - event
+      - order
+      - notification
+
+  # ==================== Auth Service ====================
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    container_name: evient-auth
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      AUTH_SERVICE_PORT: 3001
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_AUTH_DB: evient_auth
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-10}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ==================== Event Service ====================
+  event:
+    build:
+      context: .
+      dockerfile: services/event/Dockerfile
+    container_name: evient-event
+    restart: unless-stopped
+    ports:
+      - '3002:3002'
+    environment:
+      EVENT_SERVICE_PORT: 3002
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_EVENT_DB: evient_events
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ==================== Order Service ====================
+  order:
+    build:
+      context: .
+      dockerfile: services/order/Dockerfile
+    container_name: evient-order
+    restart: unless-stopped
+    ports:
+      - '3003:3003'
+    environment:
+      ORDER_SERVICE_PORT: 3003
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_ORDER_DB: evient_orders
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ==================== Notification Service ====================
+  notification:
+    build:
+      context: .
+      dockerfile: services/notification/Dockerfile
+    container_name: evient-notification
+    restart: unless-stopped
+    ports:
+      - '3004:3004'
+    environment:
+      NOTIFICATION_SERVICE_PORT: 3004
+      MONGODB_URI: mongodb://mongodb:27017
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM: noreply@evient.vn
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
+volumes:
+  mongodb_data:
