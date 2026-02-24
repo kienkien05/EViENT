@@ -77,6 +77,17 @@ export default function AdminUsersPage() {
     }
   }
 
+  const roleMutation = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) => userService.updateUser(id, { role }),
+    onSuccess: () => {
+      toast.success('Cập nhật vai trò thành công')
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Lỗi cập nhật vai trò')
+    },
+  })
+
   const createMutation = useMutation({
     mutationFn: (data: CreateUserForm) => userService.createUser(data),
     onSuccess: () => {
@@ -281,30 +292,49 @@ export default function AdminUsersPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InfoRow icon={UserIcon} label="Họ và tên" value={selectedUser.full_name} />
               <InfoRow icon={Mail} label="Email" value={selectedUser.email} />
-              <InfoRow icon={Shield} label="Vai trò"
-                value={selectedUser.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
-                badge={selectedUser.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'} />
               <InfoRow icon={Calendar} label="Ngày tạo"
                 value={selectedUser.created_at ? formatDate(selectedUser.created_at) : '—'} />
             </div>
 
-            {/* Status */}
-            <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  'size-2.5 rounded-full',
-                  selectedUser.is_active ? 'bg-green-500' : 'bg-red-500'
-                )} />
-                <span className="text-sm font-medium">
-                  {selectedUser.is_active ? 'Đang hoạt động' : 'Đã bị khóa'}
-                </span>
+            {/* Role & Status Controls */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 flex items-center justify-between p-3 rounded-lg border border-border">
+                <div className="flex items-center gap-2">
+                  <Shield className="size-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Vai trò</span>
+                </div>
+                <div className="w-32">
+                  <Select
+                    value={selectedUser.role}
+                    onChange={(val) => {
+                      roleMutation.mutate({ id: selectedUser.id, role: val })
+                      setSelectedUser((u: any) => u ? { ...u, role: val } : u)
+                    }}
+                    options={[
+                      { value: 'user', label: 'User' },
+                      { value: 'admin', label: 'Admin' },
+                    ]}
+                  />
+                </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => {
-                toggleMutation.mutate(selectedUser.id)
-                setSelectedUser((u: any) => u ? { ...u, is_active: !u.is_active } : u)
-              }} loading={toggleMutation.isPending}>
-                {selectedUser.is_active ? 'Khóa tài khoản' : 'Kích hoạt'}
-              </Button>
+
+              <div className="flex-1 flex items-center justify-between p-3 rounded-lg border border-border">
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    'size-2.5 rounded-full',
+                    selectedUser.is_active ? 'bg-green-500' : 'bg-red-500'
+                  )} />
+                  <span className="text-sm font-medium">
+                    {selectedUser.is_active ? 'Đang hoạt động' : 'Đã bị khóa'}
+                  </span>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => {
+                  toggleMutation.mutate(selectedUser.id)
+                  setSelectedUser((u: any) => u ? { ...u, is_active: !u.is_active } : u)
+                }} loading={toggleMutation.isPending}>
+                  {selectedUser.is_active ? 'Khóa tài khoản' : 'Kích hoạt'}
+                </Button>
+              </div>
             </div>
 
             {/* Account Info */}
