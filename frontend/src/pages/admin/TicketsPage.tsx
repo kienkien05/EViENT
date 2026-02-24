@@ -320,7 +320,7 @@ export default function AdminTicketsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Tổng số lượng vé phát hành (-1: Không giới hạn) <span className="text-destructive">*</span></label>
+            <label className="block text-sm font-medium mb-1">Tổng số lượng vé phát hành<span className="text-destructive">*</span></label>
             <input 
               type="number" min={-1} 
               value={ticketForm.quantity_total} 
