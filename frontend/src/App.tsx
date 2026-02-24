@@ -1,6 +1,7 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { authService } from '@/services'
 
 // Layouts
 import UserLayout from '@/components/layout/UserLayout'
@@ -68,6 +69,25 @@ function ProtectedRoute({
 }
 
 export default function App() {
+  const { isAuthenticated } = useAuthStore()
+
+  // Poll profile every 15 seconds to ensure user is still active
+  // If an admin locks the account, getProfile will throw 401/403 and trigger automatic logout via interceptor.
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    const checkActive = async () => {
+      try {
+        await authService.getProfile()
+      } catch (error) {
+        // Ignored, intercepted by axios
+      }
+    }
+
+    const interval = setInterval(checkActive, 15000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated])
+
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>

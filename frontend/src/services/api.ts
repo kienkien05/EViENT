@@ -29,7 +29,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       // Don't redirect on login attempt failures
       if (!error.config?.url?.includes('/auth/login') && !error.config?.url?.includes('/auth/verify')) {
         useAuthStore.getState().logout()
