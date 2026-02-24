@@ -257,14 +257,18 @@ export default function AdminTicketsPage() {
                           <p className="text-xs text-muted-foreground mb-1">Số lượng</p>
                           <div className="flex items-end gap-1.5">
                             <p className="font-semibold">{tt.quantity_sold || 0}</p>
-                            <p className="text-xs text-muted-foreground font-normal pb-[2px]">/ {tt.quantity_total}</p>
+                            <p className="text-xs text-muted-foreground font-normal pb-[2px]">
+                              / {tt.quantity_total === -1 ? 'Không giới hạn' : tt.quantity_total}
+                            </p>
                           </div>
-                          <div className="w-full h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full transition-all" 
-                              style={{ width: `${Math.min(100, ((tt.quantity_sold || 0) / tt.quantity_total) * 100)}%` }} 
-                            />
-                          </div>
+                          {tt.quantity_total !== -1 && (
+                            <div className="w-full h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
+                              <div 
+                                className="h-full bg-primary rounded-full transition-all" 
+                                style={{ width: `${Math.min(100, ((tt.quantity_sold || 0) / Math.max(1, tt.quantity_total)) * 100)}%` }} 
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -316,9 +320,9 @@ export default function AdminTicketsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Tổng số lượng vé phát hành <span className="text-destructive">*</span></label>
+            <label className="block text-sm font-medium mb-1">Tổng số lượng vé phát hành (-1: Không giới hạn) <span className="text-destructive">*</span></label>
             <input 
-              type="number" min={1} 
+              type="number" min={-1} 
               value={ticketForm.quantity_total} 
               onChange={e => setTicketForm(f => ({ ...f, quantity_total: Number(e.target.value) }))}
               className="w-full h-10 px-3 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm" 

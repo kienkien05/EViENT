@@ -504,26 +504,9 @@ export default function AdminEventsPage() {
                         className="w-full h-9 px-3 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium mb-1 text-muted-foreground">Số lượng phát hành</label>
+                      <label className="block text-xs font-medium mb-1 text-muted-foreground">Số lượng phát hành (-1: Không giới hạn)</label>
                       <input type="number" min={-1} value={tt.quantity_total} onChange={e => updateTicketType(idx, 'quantity_total', Number(e.target.value))}
                         className="w-full h-9 px-3 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium mb-1 text-muted-foreground">Đã bán</label>
-                      <input type="number" min={0} value={tt.quantity_sold}
-                        onChange={e => updateTicketType(idx, 'quantity_sold', Math.max(0, Number(e.target.value)))}
-                        className="w-full h-9 px-3 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium mb-1 text-muted-foreground">Vé còn lại</label>
-                      <div className="h-9 px-3 rounded-lg border border-input bg-muted/50 flex items-center text-sm font-medium">
-                        {tt.quantity_total === -1
-                          ? <span className="text-green-500">Không giới hạn</span>
-                          : <span className={tt.quantity_total - tt.quantity_sold <= 0 ? 'text-destructive' : ''}>
-                              {tt.quantity_total - tt.quantity_sold}
-                            </span>
-                        }
-                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-medium mb-1 text-muted-foreground">Số lượt mua tối đa mỗi người</label>
