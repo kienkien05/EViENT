@@ -17,7 +17,6 @@ const navLinks = [
   { to: '/', icon: Home, label: 'Trang chủ', end: true },
   { to: '/events', icon: Calendar, label: 'Sự kiện' },
   { to: '/my-tickets', icon: Ticket, label: 'Vé của tôi', auth: true },
-  { to: '/wallet', icon: Wallet, label: 'Ví', auth: true },
   { to: '/profile', icon: User, label: 'Tài khoản', auth: true },
 ]
 

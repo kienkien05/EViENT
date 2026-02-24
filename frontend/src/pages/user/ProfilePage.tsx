@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { User, Mail, Phone, MapPin, Calendar, Camera } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Calendar, Camera, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { authService, uploadService } from '@/services'
@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { getImageUrl } from '@/lib/utils'
 
 export default function ProfilePage() {
-  const { user, updateUser } = useAuthStore()
+  const { user, updateUser, logout } = useAuthStore()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     full_name: user?.full_name || '',
@@ -137,6 +137,13 @@ export default function ProfilePage() {
                 </Button>
               </>
             )}
+          </div>
+
+          <div className="pt-4 sm:hidden">
+             <Button onClick={() => { logout(); navigate('/') }} variant="destructive" className="w-full gap-2">
+               <LogOut className="size-4" />
+               Đăng xuất
+             </Button>
           </div>
         </div>
       </motion.div>
