@@ -3,7 +3,8 @@ version: '3.8'
 services:
   # ==================== MongoDB ====================
   mongodb:
-    image: mongo:7
+    image: mongo:6
+    platform: linux/amd64
     container_name: evient-mongodb
     restart: unless-stopped
     ports:
@@ -62,6 +63,7 @@ services:
       AUTH_SERVICE_PORT: 3001
       MONGODB_URI: mongodb://mongodb:27017
       MONGODB_AUTH_DB: evient_auth
+      NOTIFICATION_SERVICE_URL: http://notification:3004
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-10}
@@ -130,6 +132,20 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+
+  # ==================== Frontend Service ====================
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: evient-frontend
+    restart: unless-stopped
+    ports:
+      - '5173:5173'
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    depends_on:
+      - gateway
 
 volumes:
   mongodb_data:
