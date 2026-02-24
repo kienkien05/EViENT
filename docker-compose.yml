@@ -42,7 +42,7 @@ services:
       EVENT_SERVICE_URL: http://event:3002
       ORDER_SERVICE_URL: http://order:3003
       NOTIFICATION_SERVICE_URL: http://notification:3004
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://evient.pages.dev}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://evient.io.vn}
     depends_on:
       - auth
       - event
