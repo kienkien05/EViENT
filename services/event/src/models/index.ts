@@ -69,7 +69,6 @@ const eventSchema = new Schema<IEventDocument>(
 );
 
 // Indexes
-eventSchema.index({ slug: 1 }, { unique: true });
 eventSchema.index({ status: 1, startTime: -1 });
 eventSchema.index({ category: 1, status: 1 });
 eventSchema.index({ isHot: 1, status: 1 });

@@ -163,6 +163,18 @@ export const createEvent = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
+  try {
+    const axios = (await import('axios')).default;
+    const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
+    await axios.post(`${notificationUrl}/api/notifications/activities`, {
+      type: 'event',
+      title: `Sự kiện "${event.title}" đã được admin tạo`,
+      details: { eventId: event._id }
+    });
+  } catch (err: any) {
+    logger.warn('Failed to track event creation:', err.message);
+  }
+
   cache.del('featured_events');
   respond.successWithMessage(res, transformEvent(event.toObject()), 'Event created', 201);
 });
@@ -254,6 +266,18 @@ export const updateEvent = asyncHandler(async (req: Request, res: Response) => {
         { $addToSet: { eventIds: req.params.id } }
       );
     }
+  }
+
+  try {
+    const axios = (await import('axios')).default;
+    const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
+    await axios.post(`${notificationUrl}/api/notifications/activities`, {
+      type: 'event',
+      title: `Sự kiện "${event.title}" đã được admin cập nhật`,
+      details: { eventId: event._id }
+    });
+  } catch (err: any) {
+    logger.warn('Failed to track event update:', err.message);
   }
 
   cache.del(`event_${req.params.id}`);

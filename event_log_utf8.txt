@@ -1,0 +1,42 @@
+﻿
+> evient-app@1.0.0 dev:event
+> ts-node-dev -r dotenv/config --project services/event/tsconfig.json --respawn --transpile-only services/event/src/server.ts
+
+[INFO] 00:14:11 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.9.3)
+node.exe : 
+(node:30316) 
+[MONGOOSE] Warning: 
+Duplicate schema index 
+on {"slug":1} found. 
+This is often due to 
+declaring an index 
+using both "index: 
+true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ((node:30316)    
+ [M...dex definitio    
+n.:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)

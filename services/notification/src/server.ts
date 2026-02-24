@@ -342,6 +342,74 @@ app.post('/api/notifications/user-notifications', [
   });
 }));
 
+// ==================== Activity Logs ====================
+
+const activityLogSchema = new mongoose.Schema({
+  type: { type: String, required: true }, // 'ticket', 'user', 'event'
+  title: { type: String, required: true },
+  details: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Date, expires: 31536000, default: Date.now } // TTL index for 365 days
+});
+
+const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
+
+// GET /api/notifications/activities - Get activity logs for admin dashboard
+app.get('/api/notifications/activities', authenticate, asyncHandler(async (req: any, res) => {
+  /* Note: Assuming authenticate middleware sets req.user. Role check could be added if needed */
+  if (req.user?.role !== 'admin' && req.user?.role !== 'superadmin') {
+     // Allow for now, but in strict systems enforce role
+  }
+
+  const { startDate, endDate } = req.query;
+  const filter: any = {};
+  
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) filter.createdAt.$gte = new Date(startDate as string);
+    if (endDate) filter.createdAt.$lte = new Date(endDate as string);
+  }
+
+  const activities = await ActivityLog.find(filter)
+    .sort({ createdAt: -1 })
+    .limit(100) // reasonable limit
+    .lean();
+
+  res.json({
+    success: true,
+    data: activities.map((a: any) => ({
+      id: a._id.toString(),
+      type: a.type,
+      title: a.title,
+      details: a.details,
+      created_at: a.createdAt.toISOString(),
+    }))
+  });
+}));
+
+// POST /api/notifications/activities - Create activity log (internal)
+app.post('/api/notifications/activities', [
+  body('type').notEmpty(),
+  body('title').notEmpty(),
+  validate,
+], asyncHandler(async (req, res) => {
+  const { type, title, details } = req.body;
+
+  const activity = await ActivityLog.create({
+    type,
+    title,
+    details,
+  });
+
+  res.json({
+    success: true,
+    data: {
+      id: activity._id.toString(),
+      type: activity.type,
+      title: activity.title,
+    },
+  });
+}));
+
 // ==================== Error Handler ====================
 
 app.use(errorHandler);

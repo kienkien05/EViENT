@@ -84,6 +84,9 @@ export const orderService = {
   getSoldSeats: (eventId: string) =>
     api.get(`/orders/events/${eventId}/sold-seats`),
 
+  getRevenueReport: (params?: { startDate?: string; endDate?: string }) =>
+    api.get('/orders/revenue-report', { params }),
+
   deleteOrder: (id: string) =>
     api.delete(`/orders/${id}`),
 }
@@ -160,4 +163,7 @@ export const notificationService = {
 
   markAllAsRead: () =>
     api.patch('/notifications/read-all'),
+
+  getActivities: (params?: { startDate?: string; endDate?: string }) =>
+    api.get('/notifications/activities', { params }),
 }

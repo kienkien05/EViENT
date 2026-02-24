@@ -193,6 +193,16 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       type: 'ticket_booked',
       link: '/my-tickets',
     });
+
+    // Track activity
+    if (tickets && tickets.length > 0) {
+      const buyerName = buyer_info?.full_name || buyer_info?.email || 'Khách vãng lai';
+      await axios.post(`${notificationUrl}/api/notifications/activities`, {
+        type: 'ticket',
+        title: `Vé ${tickets[0].ticketCode}${tickets.length > 1 ? ` và ${tickets.length - 1} vé khác` : ''} đã được bán cho ${buyerName}`,
+        details: { orderId: order._id, quantity: requestedTotalQty }
+      });
+    }
   } catch (err: any) {
     logger.warn('Failed to send in-app notification:', err.message);
   }
@@ -456,4 +466,52 @@ export const updateTicket = asyncHandler(async (req: Request, res: Response) => 
   }
 
   respond.successWithMessage(res, transformTicket(ticket.toObject()), 'Ticket updated successfully');
+});
+
+/**
+ * GET /orders/revenue-report - Get revenue by event within time range (admin)
+ */
+export const getRevenueReport = asyncHandler(async (req: Request, res: Response) => {
+  const { startDate, endDate } = req.query;
+  const match: any = { status: 'paid' };
+  
+  if (startDate || endDate) {
+    match.createdAt = {};
+    if (startDate) match.createdAt.$gte = new Date(startDate as string);
+    if (endDate) match.createdAt.$lte = new Date(endDate as string);
+  }
+
+  // Group by eventId to calculate revenue
+  const revenueByEvent = await Order.aggregate([
+    { $match: match },
+    { $group: {
+      _id: '$eventId',
+      totalRevenue: { $sum: '$totalAmount' },
+      totalTickets: { $sum: { $sum: '$items.quantity' } },
+      orderCount: { $sum: 1 }
+    }},
+    { $sort: { totalRevenue: -1 } }
+  ]);
+
+  // Populate event details
+  const EventModel = (await import('../models')).EventLocal;
+  const eventIds = revenueByEvent.map((r: any) => r._id);
+  const events = await EventModel.find({ _id: { $in: eventIds } }).select('title').lean();
+  
+  const eventMap = events.reduce((acc: any, ev: any) => {
+    acc[ev._id.toString()] = ev.title;
+    return acc;
+  }, {});
+
+  const data = revenueByEvent.map((r: any) => ({
+    eventId: r._id,
+    eventTitle: eventMap[r._id?.toString()] || 'Sự kiện không xác định',
+    totalRevenue: r.totalRevenue,
+    totalTickets: r.totalTickets,
+    orderCount: r.orderCount,
+  }));
+
+  const grandTotal = data.reduce((sum: number, item: any) => sum + item.totalRevenue, 0);
+
+  respond.success(res, { data, grandTotal });
 });

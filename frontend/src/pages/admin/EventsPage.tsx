@@ -122,6 +122,9 @@ export default function AdminEventsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => eventService.deleteEvent(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'events'] }); toast.success('Đã xóa sự kiện') },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Lỗi khi xóa sự kiện')
+    }
   })
 
   const updateStatusMutation = useMutation({
@@ -130,6 +133,9 @@ export default function AdminEventsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'events'] })
       toast.success('Đã cập nhật trạng thái sự kiện')
     },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Lỗi cập nhật trạng thái')
+    }
   })
 
   const saveMutation = useMutation({
@@ -139,6 +145,10 @@ export default function AdminEventsPage() {
       setShowModal(false)
       toast.success(editEvent ? 'Đã cập nhật sự kiện' : 'Đã tạo sự kiện')
     },
+    onError: (err: any) => {
+      console.error(err)
+      toast.error(err?.response?.data?.message || 'Lỗi khi lưu sự kiện')
+    }
   })
 
 

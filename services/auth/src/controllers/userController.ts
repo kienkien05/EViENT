@@ -71,6 +71,18 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
     passwordHistory: [{ changedAt: new Date(), reason: 'register' }],
   });
 
+  try {
+    const axios = (await import('axios')).default;
+    const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
+    await axios.post(`${notificationUrl}/api/notifications/activities`, {
+      type: 'user',
+      title: `Tài khoản ${user.fullName || user.email} vừa được tạo bởi admin`,
+      details: { userId: user._id }
+    });
+  } catch (err: any) {
+    logger.warn('Failed to track user creation by admin:', err.message);
+  }
+
   const result = user.toObject();
   respond.successWithMessage(res, transformUser(result), 'Tạo người dùng thành công', 201);
 });

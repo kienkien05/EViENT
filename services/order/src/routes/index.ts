@@ -20,6 +20,7 @@ router.get('/orders/my-tickets', authenticate, [
 
 router.get('/orders/remaining/:eventId', ctrl.getRemainingTickets);
 router.get('/orders/events/:eventId/sold-seats', ctrl.getSoldSeats);
+router.get('/orders/revenue-report', authenticate, authorize('admin'), ctrl.getRevenueReport);
 
 // ==================== Tickets (admin) ====================
 

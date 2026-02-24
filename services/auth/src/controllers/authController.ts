@@ -109,6 +109,17 @@ export const verifyRegister = asyncHandler(async (req: Request, res: Response) =
     { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
   );
 
+  try {
+    const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
+    await axios.post(`${notificationUrl}/api/notifications/activities`, {
+      type: 'user',
+      title: `Tài khoản ${user.fullName || user.email} vừa được tạo`,
+      details: { userId: user._id }
+    });
+  } catch (err: any) {
+    logger.warn('Failed to track user registration:', err.message);
+  }
+
   respond.successWithMessage(res, {
     token,
     user: transformUser(user),
