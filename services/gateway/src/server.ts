@@ -53,22 +53,17 @@ const proxyErrorHandler = (serviceName: string) => ({
 });
 
 // Auth Service — /api/auth/*, /api/users/*, /api/upload/*
-app.use('/api/auth', createProxyMiddleware({ target: AUTH_URL, changeOrigin: true, on: proxyErrorHandler('Auth service') }));
-app.use('/api/users', createProxyMiddleware({ target: AUTH_URL, changeOrigin: true, on: proxyErrorHandler('Auth service') }));
-app.use('/api/upload', createProxyMiddleware({ target: AUTH_URL, changeOrigin: true, on: proxyErrorHandler('Auth service') }));
+app.use(createProxyMiddleware({ target: AUTH_URL, changeOrigin: true, on: proxyErrorHandler('Auth service'), pathFilter: ['/api/auth', '/api/users', '/api/upload'] }));
 
 // Event Service — /api/events/*, /api/rooms/*, /api/banners/*, /api/ticket-types/*
-app.use('/api/events', createProxyMiddleware({ target: EVENT_URL, changeOrigin: true, on: proxyErrorHandler('Event service') }));
-app.use('/api/rooms', createProxyMiddleware({ target: EVENT_URL, changeOrigin: true, on: proxyErrorHandler('Event service') }));
-app.use('/api/banners', createProxyMiddleware({ target: EVENT_URL, changeOrigin: true, on: proxyErrorHandler('Event service') }));
-app.use('/api/ticket-types', createProxyMiddleware({ target: EVENT_URL, changeOrigin: true, on: proxyErrorHandler('Event service') }));
+app.use(createProxyMiddleware({ target: EVENT_URL, changeOrigin: true, on: proxyErrorHandler('Event service'), pathFilter: ['/api/events', '/api/rooms', '/api/banners', '/api/ticket-types'] }));
 
 // Order Service — /api/orders/*, /api/tickets/*
-app.use('/api/orders', createProxyMiddleware({ target: ORDER_URL, changeOrigin: true, on: proxyErrorHandler('Order service') }));
-app.use('/api/tickets', createProxyMiddleware({ target: ORDER_URL, changeOrigin: true, on: proxyErrorHandler('Order service') }));
+app.use(createProxyMiddleware({ target: ORDER_URL, changeOrigin: true, on: proxyErrorHandler('Order service'), pathFilter: ['/api/orders', '/api/tickets'] }));
 
 // Notification Service — /api/notifications/*
-app.use('/api/notifications', createProxyMiddleware({ target: NOTIFICATION_URL, changeOrigin: true, on: proxyErrorHandler('Notification service') }));
+app.use(createProxyMiddleware({ target: NOTIFICATION_URL, changeOrigin: true, on: proxyErrorHandler('Notification service'), pathFilter: ['/api/notifications'] }));
+
 
 // ==================== Error Handler ====================
 
