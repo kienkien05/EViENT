@@ -101,7 +101,12 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     sum + (Number(item.unit_price) * item.quantity), 0
   );
 
-  // Create order
+  // If amount > 0 and no payment method specified, default to vnpay
+  const method = payment_method || (totalAmount > 0 ? 'vnpay' : 'free');
+
+  // Create order in 'pending' if payment is required (vnpay), otherwise 'paid' for 'free'
+  const isFree = totalAmount === 0 || method === 'free';
+
   const order = await Order.create({
     userId,
     eventId: event_id,
@@ -113,10 +118,33 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       unitPrice: item.unit_price,
     })),
     totalAmount,
-    status: 'paid', // For now, auto-pay
-    paymentMethod: payment_method || 'free',
+    status: isFree ? 'paid' : 'pending',
+    paymentMethod: method,
+    seatAssignmentsSnapshot: seat_assignments || [], // Save seats to order in case payment delayed
   });
 
+  // If payment is VNPay, do not generate tickets yet. Return payment URL.
+  if (!isFree && method === 'vnpay') {
+    const { buildVNPayUrl } = await import('../utils/vnpay');
+    const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    
+    // Convert array to string or fallback
+    const ipString = Array.isArray(ipAddr) ? ipAddr[0] : ipAddr;
+    
+    const paymentUrl = buildVNPayUrl(
+      totalAmount,
+      order._id.toString(),
+      ipString,
+      `EViENT - Thanh toan ve su kien ${order._id}`
+    );
+
+    return respond.successWithMessage(res, {
+      order: transformOrder(order.toObject()),
+      paymentUrl,
+    }, 'Order pending payment', 201);
+  }
+
+  // --- BEGIN LOGIC FOR FREE ORDERS ---
   // Generate tickets in bulk
   const ticketDocs: Partial<ITicketDocument>[] = [];
   for (const item of items) {
@@ -173,6 +201,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     order: transformOrder(order.toObject()),
     tickets: tickets.map((t: any) => transformTicket(t.toObject ? t.toObject() : t)),
   }, 'Order created successfully', 201);
+  // --- END LOGIC FOR FREE ORDERS ---
 });
 
 /**
@@ -307,18 +336,7 @@ export const validateQR = asyncHandler(async (req: Request, res: Response) => {
     return respond.error(res, `Vé đã được sử dụng lúc ${usedTime}`, 400);
   }
 
-  // Check event timing (if snapshot available)
-  if (ticket.eventSnapshot?.startTime) {
-    const now = new Date();
-    const eventStart = new Date(ticket.eventSnapshot.startTime);
-    const checkInWindowHours = 2;
-    const checkInStart = new Date(eventStart.getTime() - checkInWindowHours * 60 * 60 * 1000);
-
-    if (now < checkInStart) {
-      const openTime = checkInStart.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-      return respond.error(res, `Chưa đến giờ check-in. Mở cửa lúc ${openTime}`, 400);
-    }
-  }
+  // Time limit for check-in removed as requested by the user.
 
   // Backfill buyerSnapshot if missing (legacy tickets)
   const hasBuyerInfo = ticket.buyerSnapshot && ticket.buyerSnapshot.fullName;

@@ -79,6 +79,22 @@ type TabId = typeof tabs[number]['id']
 
 // ==================== Main Component ====================
 
+// Helper to convert DB ISO string to local input format "YYYY-MM-DDTHH:mm"
+const toLocalDatetimeInput = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// Helper to convert local input format "YYYY-MM-DDTHH:mm" to DB ISO string
+const toUtcIsoString = (localStr: string) => {
+  if (!localStr) return '';
+  const d = new Date(localStr);
+  return isNaN(d.getTime()) ? '' : d.toISOString();
+}
+
 export default function AdminEventsPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -142,8 +158,8 @@ export default function AdminEventsPage() {
       location: e.location || '',
       category: e.category || '',
       status: e.status || 'draft',
-      start_time: e.start_time ? new Date(e.start_time).toISOString().slice(0, 16) : '',
-      end_time: e.end_time ? new Date(e.end_time).toISOString().slice(0, 16) : '',
+      start_time: toLocalDatetimeInput(e.start_time),
+      end_time: toLocalDatetimeInput(e.end_time),
       banner_image: e.banner_image || '',
       sub_banners: e.sub_banners || [],
       show_sub_banners: e.show_sub_banners !== false,
@@ -171,7 +187,15 @@ export default function AdminEventsPage() {
       setActiveTab('info')
       return
     }
-    saveMutation.mutate(form)
+
+    // Convert local datetime strings to strict UTC ISO strings before sending
+    const payload = {
+      ...form,
+      start_time: toUtcIsoString(form.start_time),
+      end_time: toUtcIsoString(form.end_time),
+    }
+
+    saveMutation.mutate(payload)
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
