@@ -45,7 +45,7 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
 export const getUserById = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.params.id).select('-passwordHash').lean();
   if (!user) {
-    return respond.notFound(res, 'User not found');
+    return respond.notFound(res, 'Không tìm thấy người dùng');
   }
   respond.success(res, transformUser(user));
 });
@@ -58,7 +58,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
 
   const existing = await User.findOne({ email: email.toLowerCase() }).lean();
   if (existing) {
-    return respond.error(res, 'Email already exists', 409);
+    return respond.error(res, 'Email đã tồn tại trong hệ thống', 409);
   }
 
   const passwordHash = await bcrypt.hash(password, Number(process.env.BCRYPT_ROUNDS) || 10);
@@ -72,7 +72,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
   });
 
   const result = user.toObject();
-  respond.successWithMessage(res, transformUser(result), 'User created successfully', 201);
+  respond.successWithMessage(res, transformUser(result), 'Tạo người dùng thành công', 201);
 });
 
 /**
@@ -108,10 +108,10 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   ).select('-passwordHash').lean();
 
   if (!user) {
-    return respond.notFound(res, 'User not found');
+    return respond.notFound(res, 'Không tìm thấy người dùng');
   }
 
-  respond.successWithMessage(res, transformUser(user), 'User updated successfully');
+  respond.successWithMessage(res, transformUser(user), 'Cập nhật người dùng thành công');
 });
 
 /**
@@ -120,9 +120,9 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
 export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findByIdAndDelete(req.params.id).lean();
   if (!user) {
-    return respond.notFound(res, 'User not found');
+    return respond.notFound(res, 'Không tìm thấy người dùng');
   }
-  respond.successMessage(res, 'User deleted successfully');
+  respond.successMessage(res, 'Xóa người dùng thành công');
 });
 
 /**
@@ -131,7 +131,7 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
 export const toggleUserStatus = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.params.id);
   if (!user) {
-    return respond.notFound(res, 'User not found');
+    return respond.notFound(res, 'Không tìm thấy người dùng');
   }
 
   user.isActive = !user.isActive;
@@ -139,7 +139,7 @@ export const toggleUserStatus = asyncHandler(async (req: Request, res: Response)
 
   respond.successWithMessage(
     res,
-    transformUser(user.toObject()),
-    `User ${user.isActive ? 'activated' : 'deactivated'} successfully`
+    transformUser(user),
+    user.isActive ? 'Người dùng đã được kích hoạt' : 'Người dùng đã bị khóa'
   );
 });

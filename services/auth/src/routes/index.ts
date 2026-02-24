@@ -18,7 +18,7 @@ router.post('/auth/register', [
 
 router.post('/auth/verify-register', [
   validators.emailRule(),
-  body('otp').notEmpty().withMessage('OTP is required'),
+  body('otp').notEmpty().withMessage('Vui lòng nhập mã OTP'),
   validators.passwordRule(),
   validators.requiredString('full_name', 'Full name'),
   validate,
@@ -32,7 +32,7 @@ router.post('/auth/login', [
 
 router.post('/auth/verify-login', [
   validators.emailRule(),
-  body('otp').notEmpty().withMessage('OTP is required'),
+  body('otp').notEmpty().withMessage('Vui lòng nhập mã OTP'),
   validate,
 ], authCtrl.verifyLogin);
 
@@ -43,8 +43,8 @@ router.post('/auth/forgot-password', [
 
 router.post('/auth/reset-password', [
   validators.emailRule(),
-  body('otp').notEmpty().withMessage('OTP is required'),
-  body('new_password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('otp').notEmpty().withMessage('Vui lòng nhập mã OTP'),
+  body('new_password').isLength({ min: 6 }).withMessage('Mật khẩu phải có ít nhất 6 ký tự'),
   validate,
 ], authCtrl.resetPassword);
 

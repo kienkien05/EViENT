@@ -4,8 +4,8 @@ import { query, body, param, ValidationChain } from 'express-validator';
  * Common pagination validation
  */
 export const paginationRules: ValidationChain[] = [
-  query('page').optional().isInt({ min: 1 }).toInt().withMessage('Page must be a positive integer'),
-  query('limit').optional().isInt({ min: 1, max: 100 }).toInt().withMessage('Limit must be between 1 and 100'),
+  query('page').optional().isInt({ min: 1 }).toInt().withMessage('Trang phải là số nguyên dương'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt().withMessage('Giới hạn phải từ 1 đến 100'),
   query('search').optional().isString().trim(),
 ];
 
@@ -13,7 +13,7 @@ export const paginationRules: ValidationChain[] = [
  * Email validation
  */
 export const emailRule = (field = 'email'): ValidationChain =>
-  body(field).isEmail().normalizeEmail().withMessage('Valid email is required');
+  body(field).isEmail().normalizeEmail().withMessage('Email không hợp lệ');
 
 /**
  * Password validation
@@ -21,13 +21,13 @@ export const emailRule = (field = 'email'): ValidationChain =>
 export const passwordRule = (field = 'password'): ValidationChain =>
   body(field)
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters');
+    .withMessage('Mật khẩu phải có ít nhất 6 ký tự');
 
 /**
  * MongoDB ObjectId param validation
  */
 export const objectIdParam = (paramName = 'id'): ValidationChain =>
-  param(paramName).isMongoId().withMessage(`Invalid ${paramName} format`);
+  param(paramName).isMongoId().withMessage(`Định dạng ${paramName} không hợp lệ`);
 
 /**
  * Required string body field
@@ -35,6 +35,6 @@ export const objectIdParam = (paramName = 'id'): ValidationChain =>
 export const requiredString = (field: string, label?: string): ValidationChain =>
   body(field)
     .notEmpty()
-    .withMessage(`${label || field} is required`)
+    .withMessage(`Vui lòng nhập ${label || field}`)
     .isString()
     .trim();

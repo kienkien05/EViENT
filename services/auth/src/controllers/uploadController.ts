@@ -65,7 +65,7 @@ export const upload = multer({
  */
 export const handleUpload = asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) {
-    return respond.error(res, 'No file provided', 400);
+    return respond.error(res, 'Vui lòng chọn file hợp lệ', 400);
   }
 
   let fileUrl = '';
@@ -79,10 +79,10 @@ export const handleUpload = asyncHandler(async (req: Request, res: Response) => 
   }
   
   if (!fileUrl) {
-    return respond.error(res, 'Failed to upload file to Cloudinary', 500);
+    return respond.error(res, 'Tải file lên Cloudinary thất bại', 500);
   }
 
   logger.info(`File uploaded successfully: ${fileUrl}`);
 
-  respond.successWithMessage(res, { url: fileUrl }, 'File uploaded successfully');
+  respond.successWithMessage(res, { url: fileUrl }, 'Tải file thành công');
 });

@@ -47,7 +47,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   const existing = await User.findOne({ email: email.toLowerCase() }).lean();
   if (existing) {
-    return respond.error(res, 'Email already registered', 409);
+    return respond.error(res, 'Email đã được đăng ký', 409);
   }
 
   const otpCode = generateOtp();
@@ -67,7 +67,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   // Send OTP via notification service (MailHog)
   await sendOtpEmail(email.toLowerCase(), otpCode, 'register');
 
-  respond.successMessage(res, 'OTP sent to your email', 200);
+  respond.successMessage(res, 'Mã OTP đã được gửi đến email của bạn', 200);
 });
 
 /**
@@ -85,7 +85,7 @@ export const verifyRegister = asyncHandler(async (req: Request, res: Response) =
   });
 
   if (!otpRecord) {
-    return respond.error(res, 'Invalid or expired OTP', 400);
+    return respond.error(res, 'Mã OTP không hợp lệ hoặc đã hết hạn', 400);
   }
 
   // Mark OTP as used
@@ -112,7 +112,7 @@ export const verifyRegister = asyncHandler(async (req: Request, res: Response) =
   respond.successWithMessage(res, {
     token,
     user: transformUser(user),
-  }, 'Registration successful', 201);
+  }, 'Đăng ký thành công', 201);
 });
 
 /**
@@ -123,16 +123,16 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) {
-    return respond.error(res, 'Invalid email or password', 401);
+    return respond.error(res, 'Email hoặc mật khẩu không đúng', 401);
   }
 
   if (!user.isActive) {
-    return respond.error(res, 'Account is disabled', 403);
+    return respond.error(res, 'Tài khoản đang bị khóa', 403);
   }
 
   const isValid = await bcrypt.compare(password, user.passwordHash);
   if (!isValid) {
-    return respond.error(res, 'Invalid email or password', 401);
+    return respond.error(res, 'Email hoặc mật khẩu không đúng', 401);
   }
 
   // DEV MODE: Skip OTP if SKIP_LOGIN_OTP is set
@@ -145,7 +145,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     return respond.successWithMessage(res, {
       token,
       user: transformUser(user),
-    }, 'Login successful');
+    }, 'Đăng nhập thành công');
   }
 
   const otpCode = generateOtp();
@@ -162,7 +162,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   // Send OTP via notification service (MailHog)
   await sendOtpEmail(email.toLowerCase(), otpCode, 'login');
 
-  respond.successMessage(res, 'OTP sent to your email');
+  respond.successMessage(res, 'Mã OTP đã được gửi đến email của bạn');
 });
 
 /**
@@ -180,7 +180,7 @@ export const verifyLogin = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!otpRecord) {
-    return respond.error(res, 'Invalid or expired OTP', 400);
+    return respond.error(res, 'Mã OTP không hợp lệ hoặc đã hết hạn', 400);
   }
 
   otpRecord.isUsed = true;
@@ -188,7 +188,7 @@ export const verifyLogin = asyncHandler(async (req: Request, res: Response) => {
 
   const user = await User.findOne({ email: email.toLowerCase() }).lean();
   if (!user) {
-    return respond.error(res, 'User not found', 404);
+    return respond.error(res, 'Không tìm thấy người dùng', 404);
   }
 
   const token = jwt.sign(
@@ -200,7 +200,7 @@ export const verifyLogin = asyncHandler(async (req: Request, res: Response) => {
   respond.successWithMessage(res, {
     token,
     user: transformUser(user),
-  }, 'Login successful');
+  }, 'Đăng nhập thành công');
 });
 
 /**
@@ -212,7 +212,7 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
   const user = await User.findOne({ email: email.toLowerCase() }).lean();
   if (!user) {
     // Don't reveal if user exists
-    return respond.successMessage(res, 'If your email is registered, you will receive a reset code');
+    return respond.successMessage(res, 'Nếu email hợp lệ, bạn sẽ nhận được mã OTP khôi phục');
   }
 
   const otpCode = generateOtp();
@@ -229,7 +229,7 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
   // Send OTP via notification service (MailHog)
   await sendOtpEmail(email.toLowerCase(), otpCode, 'reset_password');
 
-  respond.successMessage(res, 'If your email is registered, you will receive a reset code');
+  respond.successMessage(res, 'Nếu email hợp lệ, bạn sẽ nhận được mã OTP khôi phục');
 });
 
 /**
@@ -247,7 +247,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
   });
 
   if (!otpRecord) {
-    return respond.error(res, 'Invalid or expired OTP', 400);
+    return respond.error(res, 'Mã OTP không hợp lệ hoặc đã hết hạn', 400);
   }
 
   otpRecord.isUsed = true;
@@ -262,7 +262,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
     }
   );
 
-  respond.successMessage(res, 'Password reset successfully');
+  respond.successMessage(res, 'Đặt lại mật khẩu thành công');
 });
 
 /**
@@ -271,7 +271,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.user!.id).lean();
   if (!user) {
-    return respond.notFound(res, 'User not found');
+    return respond.notFound(res, 'Không tìm thấy người dùng');
   }
   respond.success(res, transformUser(user));
 });
@@ -303,10 +303,10 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   ).lean();
 
   if (!user) {
-    return respond.notFound(res, 'User not found');
+    return respond.notFound(res, 'Không tìm thấy người dùng');
   }
 
-  respond.successWithMessage(res, transformUser(user), 'Profile updated successfully');
+  respond.successWithMessage(res, transformUser(user), 'Cập nhật hồ sơ thành công');
 });
 
 /**
@@ -315,11 +315,11 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 export const deleteProfile = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findByIdAndDelete(req.user!.id).lean();
   if (!user) {
-    return respond.notFound(res, 'User not found');
+    return respond.notFound(res, 'Không tìm thấy người dùng');
   }
 
   // Also clean up any pending OTP codes for this user
   await OtpCode.deleteMany({ email: user.email });
 
-  respond.successWithMessage(res, null, 'Account deleted successfully', 200);
+  respond.successWithMessage(res, null, 'Xóa tài khoản thành công', 200);
 });
