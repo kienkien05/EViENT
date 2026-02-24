@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState } from 'react'
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -36,10 +37,10 @@ export default function UserLayout() {
       <header className="hidden sm:block sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center justify-center">
-            <img src="/images/banner.png" alt="EViENT" className="h-10 w-auto object-contain dark:hidden" />
-            <img src="/images/logo.png" alt="EViENT" className="h-10 w-auto object-contain hidden dark:block" />
-          </Link>
+            <Link to="/" className="flex items-center justify-center">
+              <img src={`${import.meta.env.BASE_URL}images/banner.png`} alt="EViENT" className="h-10 w-auto object-contain dark:hidden" />
+              <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="EViENT" className="h-10 w-auto object-contain hidden dark:block" />
+            </Link>
 
           {/* Desktop Nav */}
           <nav className="flex items-center gap-1">
@@ -154,8 +155,8 @@ export default function UserLayout() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <img src="/images/banner.png" alt="EViENT" className="h-8 w-auto object-contain dark:hidden" />
-              <img src="/images/logo.png" alt="EViENT" className="h-8 w-auto object-contain hidden dark:block" />
+              <img src={`${import.meta.env.BASE_URL}images/banner.png`} alt="EViENT" className="h-8 w-auto object-contain dark:hidden" />
+              <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="EViENT" className="h-8 w-auto object-contain hidden dark:block" />
             </div>
             <p className="text-sm text-muted-foreground">
               © 2026 EViENT. Hệ thống quản lý sự kiện.

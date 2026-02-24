@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState } from 'react'
 import { Outlet, NavLink, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -43,8 +44,8 @@ export default function AdminLayout() {
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border">
           <Link to="/admin" className="flex items-center justify-center">
-            <img src="/images/banner.png" alt="EViENT" className="h-10 w-auto object-contain dark:hidden" />
-            <img src="/images/logo.png" alt="EViENT" className="h-10 w-auto object-contain hidden dark:block" />
+            <img src={`${import.meta.env.BASE_URL}images/banner.png`} alt="EViENT" className="h-10 w-auto object-contain dark:hidden" />
+            <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="EViENT" className="h-10 w-auto object-contain hidden dark:block" />
           </Link>
           <Button
             variant="ghost"

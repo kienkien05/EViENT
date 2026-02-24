@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -8,6 +9,9 @@ import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { authService } from '@/services'
 import { cn } from '@/lib/utils'
+
+import bannerImg from '@/assets/images/banner.png'
+import logoImg from '@/assets/images/logo.png'
 
 export default function LoginPage() {
   const [step, setStep] = useState<'credentials' | 'register'>('credentials')
@@ -76,8 +80,8 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/images/banner.png" alt="EViENT" className="h-20 w-auto object-contain mx-auto dark:hidden" />
-          <img src="/images/logo.png" alt="EViENT" className="h-20 w-auto object-contain mx-auto hidden dark:block" />
+          <img src={`${import.meta.env.BASE_URL}images/banner.png`} alt="EViENT" className="h-20 w-auto object-contain mx-auto dark:hidden" />
+          <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="EViENT" className="h-20 w-auto object-contain mx-auto hidden dark:block" />
           <p className="mt-2 text-muted-foreground">
             {step === 'credentials' ? 'Đăng nhập vào tài khoản' : 'Tạo tài khoản mới'}
           </p>
