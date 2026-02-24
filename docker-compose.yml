@@ -63,7 +63,7 @@ services:
       MONGODB_URI: mongodb://mongodb:27017
       MONGODB_AUTH_DB: evient_auth
       NOTIFICATION_SERVICE_URL: http://notification:3004
-      SKIP_LOGIN_OTP: ${SKIP_LOGIN_OTP:-true}
+      SKIP_LOGIN_OTP: ${SKIP_LOGIN_OTP:-false}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-10}

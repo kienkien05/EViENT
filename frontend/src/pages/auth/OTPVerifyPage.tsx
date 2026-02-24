@@ -11,6 +11,7 @@ import { authService } from '@/services'
 export default function OTPVerifyPage() {
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const navigate = useNavigate()
   const { theme, toggleTheme } = useThemeStore()
@@ -69,6 +70,23 @@ export default function OTPVerifyPage() {
     })
     setOtp(newOtp)
     if (text.length === 6) handleVerify(text)
+  }
+
+  const handleResend = async () => {
+    if (!state || resending) return
+    setResending(true)
+    try {
+      if (state.type === 'register') {
+        await authService.register({ email: state.email, password: state.password!, full_name: state.full_name! })
+      } else {
+        await authService.forgotPassword(state.email)
+      }
+      toast.success('Đã gửi lại mã OTP. Vui lòng kiểm tra email.')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể gửi lại mã OTP')
+    } finally {
+      setResending(false)
+    }
   }
 
   const handleVerify = async (otpCode: string) => {
@@ -157,8 +175,12 @@ export default function OTPVerifyPage() {
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Không nhận được mã?{' '}
-            <button className="text-primary hover:underline font-medium">
-              Gửi lại
+            <button 
+              onClick={handleResend}
+              disabled={resending}
+              className="text-primary hover:underline font-medium disabled:opacity-50"
+            >
+              {resending ? 'Đang gửi...' : 'Gửi lại'}
             </button>
           </p>
         </div>
