@@ -11,11 +11,19 @@ app.use(express.json({ limit: '5mb' }));
 
 // ==================== Email Transporter ====================
 
+const smtpPort = Number(process.env.SMTP_PORT) || 587;
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'localhost',
-  port: Number(process.env.SMTP_PORT) || 1025,
-  secure: false,
-  ignoreTLS: true,
+  port: smtpPort,
+  secure: smtpPort === 465,
+  requireTLS: smtpPort === 587,
+  auth: process.env.SMTP_USER ? {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  } : undefined,
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
 
 // ==================== Notification Model ====================
@@ -53,22 +61,80 @@ app.post('/api/notifications/send-otp', [
 ], asyncHandler(async (req, res) => {
   const { email, otp_code, type } = req.body;
 
-  const typeLabels: Record<string, string> = {
-    register: 'Xác nhận đăng ký',
-    login: 'Xác nhận đăng nhập',
-    reset_password: 'Đặt lại mật khẩu',
+  const emailTypes: Record<string, { title: string, desc: string }> = {
+    register: {
+      title: 'Chào mừng bạn đến với EViENT!',
+      desc: 'Cảm ơn bạn đã lựa chọn EViENT. Để tiếp tục quá trình đăng ký và bắt đầu khám phá các sự kiện tuyệt vời, vui lòng nhập mã xác nhận bên dưới:',
+    },
+    login: {
+      title: 'Yêu cầu đăng nhập 🔐',
+      desc: 'Chúng tôi nhận được yêu cầu đăng nhập vào tài khoản của bạn. Để bảo mật thông tin, vui lòng nhập mã xác nhận gồm 6 chữ số bên dưới:',
+    },
+    reset_password: {
+      title: 'Yêu cầu đặt lại mật khẩu 🔑',
+      desc: 'Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản này. Vui lòng sử dụng mã xác nhận bên dưới để tạo một mật khẩu mới:',
+    },
   };
 
-  const subject = `[EViENT] ${typeLabels[type] || 'OTP'} - Mã xác thực: ${otp_code}`;
+  const context = emailTypes[type] || emailTypes['login'];
+  const subject = `[EViENT] Mã xác thực của bạn là: ${otp_code}`;
+  
   const body = `
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #6366f1;">🎫 EViENT</h2>
-      <p>Mã xác thực của bạn:</p>
-      <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-        <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #6366f1;">${otp_code}</span>
-      </div>
-      <p style="color: #6b7280; font-size: 14px;">Mã có hiệu lực trong 5 phút. Không chia sẻ mã này cho bất kỳ ai.</p>
-    </div>
+  <!DOCTYPE html>
+  <html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EViENT - OTP Verification</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #fffaf5; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #fffaf5; padding: 40px 20px;">
+      <tr>
+        <td align="center">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.05), 0 8px 10px -6px rgba(249, 115, 22, 0.01); overflow: hidden; border: 1px solid #ffedd5;">
+            
+            <!-- Header -->
+            <tr>
+              <td style="padding: 40px 40px 20px 40px; text-align: center; border-bottom: 1px solid #ffedd5;">
+                <h1 style="margin: 0; color: #ea580c; font-size: 32px; font-weight: 800; letter-spacing: -1px;">EViENT</h1>
+                <p style="margin: 8px 0 0 0; color: #78350f; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Nền tảng sự kiện hàng đầu</p>
+              </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+              <td style="padding: 40px; text-align: center;">
+                <h2 style="margin: 0 0 16px 0; color: #431407; font-size: 24px; font-weight: 700;">${context.title}</h2>
+                <p style="margin: 0 0 32px 0; color: #9a3412; font-size: 16px; line-height: 1.6; max-width: 480px; margin-left: auto; margin-right: auto;">
+                  ${context.desc}
+                </p>
+
+                <!-- OTP Box -->
+                <div style="background-color: #fff7ed; border: 2px dashed #fdba74; border-radius: 12px; padding: 24px; width: fit-content; margin: 0 auto; display: inline-block;">
+                  <span style="font-family: 'Courier New', Courier, monospace; font-size: 42px; font-weight: 800; color: #ea580c; letter-spacing: 12px; padding-left: 12px; display: block;">${otp_code}</span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding: 32px 40px; background-color: #fffaf5; border-top: 1px solid #ffedd5;">
+                <p style="margin: 0 0 8px 0; color: #9a3412; font-size: 13px; line-height: 1.5; text-align: center;">
+                  Mã xác nhận này có hiệu lực trong vòng <strong style="color: #ea580c;">5 phút</strong>.<br/>
+                  Vì lý do bảo mật, vui lòng <strong style="color: #ea580c;">không chia sẻ</strong> mã này cho bất kỳ ai.
+                </p>
+                <p style="margin: 16px 0 0 0; color: #fdba74; font-size: 12px; text-align: center;">
+                  Đây là email được gửi tự động. Vui lòng không trả lời email này.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
   `;
 
   const notification = await Notification.create({
@@ -291,11 +357,12 @@ async function start() {
     logger.info('Connected to MongoDB: evient_notifications');
 
     // Verify SMTP connection
+    logger.info(`SMTP config: host=${process.env.SMTP_HOST}, port=${process.env.SMTP_PORT}, user=${process.env.SMTP_USER ? '***set***' : 'not set'}`);
     try {
       await transporter.verify();
       logger.info('SMTP connection verified');
-    } catch {
-      logger.warn('SMTP not available - emails will fail');
+    } catch (smtpErr: any) {
+      logger.warn(`SMTP not available: ${smtpErr.message}`);
     }
 
     app.listen(PORT, () => logger.info(`Notification Service running on port ${PORT}`));

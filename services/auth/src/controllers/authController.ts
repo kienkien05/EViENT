@@ -135,8 +135,8 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     return respond.error(res, 'Invalid email or password', 401);
   }
 
-  // DEV MODE: Skip OTP if SKIP_OTP is set
-  if (process.env.SKIP_OTP === 'true') {
+  // DEV MODE: Skip OTP if SKIP_LOGIN_OTP is set
+  if (process.env.SKIP_LOGIN_OTP === 'true') {
     const token = jwt.sign(
       { id: user._id.toString(), email: user.email, role: user.role },
       process.env.JWT_SECRET as string,

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search, UserX, UserCheck, Plus, X, Eye, Shield, Clock,
-  KeyRound, Mail, Calendar, User as UserIcon,
+  KeyRound, Mail, Calendar, User as UserIcon, EyeOff
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { userService } from '@/services'
@@ -40,6 +40,7 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [selectedUser, setSelectedUser] = useState<any>(null)
   const [form, setForm] = useState<CreateUserForm>({ ...emptyForm })
   const queryClient = useQueryClient()
@@ -209,8 +210,15 @@ export default function AdminUsersPage() {
             <div className="relative">
               <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <input value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                type="password" placeholder="Tối thiểu 6 ký tự"
-                className="w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm" />
+                type={showPassword ? "text" : "password"} placeholder="Tối thiểu 6 ký tự"
+                className="w-full h-10 pl-10 pr-10 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm" />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
             </div>
           </div>
 
