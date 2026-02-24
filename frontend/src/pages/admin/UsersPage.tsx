@@ -94,7 +94,11 @@ export default function AdminUsersPage() {
     })
   }
 
-  const users = data?.data || []
+  // Handle potential nested data from API or React Query
+  let rawUsers = data?.data
+  if (data?.data?.data) rawUsers = data.data.data
+  const users = Array.isArray(rawUsers) ? rawUsers : []
+  console.log('DEBUG USERS:', data, users)
 
   return (
     <div>
@@ -124,8 +128,11 @@ export default function AdminUsersPage() {
             <th className="text-right p-3 font-medium">Thao tác</th>
           </tr></thead>
           <tbody>
-            {isLoading ? Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} columns={6} />) :
-              users.map((u: any) => (
+            {isLoading && Array.from({ length: 5 }).map((_, i) => <TableRowSkeleton key={i} columns={6} />)}
+            {!isLoading && users.length === 0 && (
+              <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">Không có dữ liệu</td></tr>
+            )}
+            {!isLoading && users.map((u: any) => (
                 <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer"
                   onClick={() => openDetail(u)}>
                   <td className="p-3 font-medium">{u.full_name}</td>
@@ -161,7 +168,15 @@ export default function AdminUsersPage() {
 
       {/* Mobile */}
       <div className="md:hidden space-y-3">
-        {users.map((u: any) => (
+        {isLoading && Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-card border border-border rounded-xl p-4 h-24 animate-pulse bg-muted/40" />
+        ))}
+        {!isLoading && users.length === 0 && (
+          <div className="bg-card border border-border rounded-xl p-6 text-center text-muted-foreground text-sm">
+            Không có dữ liệu
+          </div>
+        )}
+        {!isLoading && users.map((u: any) => (
           <div key={u.id} className="bg-card border border-border rounded-xl p-4" onClick={() => openDetail(u)}>
             <div className="flex items-center justify-between">
               <div>
