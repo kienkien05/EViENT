@@ -56,29 +56,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   // Store OTP (with hashed password for later use)
   const passwordHash = await bcrypt.hash(password, Number(process.env.BCRYPT_ROUNDS) || 10);
 
-  // DEV MODE: Skip OTP if SKIP_LOGIN_OTP is set
-  if (process.env.SKIP_LOGIN_OTP === 'true') {
-    const user = await User.create({
-      email: email.toLowerCase(),
-      fullName: full_name,
-      passwordHash,
-      role: 'user',
-      isActive: true,
-      passwordHistory: [{ changedAt: new Date(), reason: 'register' }],
-    });
-
-    const token = jwt.sign(
-      { id: user._id.toString(), email: user.email, role: user.role },
-      process.env.JWT_SECRET as string,
-      { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
-    );
-
-    return respond.successWithMessage(res, {
-      token,
-      user: transformUser(user),
-    }, 'Registration successful (OTP Bypassed)', 201);
-  }
-
   await OtpCode.create({
     email: email.toLowerCase(),
     code: otpCode,
