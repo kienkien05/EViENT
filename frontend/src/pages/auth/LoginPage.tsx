@@ -100,7 +100,7 @@ export default function LoginPage() {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all"
-                    placeholder="Nguyễn Văn A"
+                    placeholder="*Nguyễn Văn A"
                   />
                 </div>
               )}
