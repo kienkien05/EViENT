@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Search, Trash2, Plus, X, Eye, Shield, Clock,
+  Search, Trash2, Plus, X, Eye, Shield, Clock, UserX, UserCheck,
   KeyRound, Mail, Calendar, User as UserIcon, EyeOff
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -60,6 +60,14 @@ export default function AdminUsersPage() {
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể xóa người dùng')
     }
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: (id: string) => userService.toggleStatus(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      toast.success('Đã cập nhật trạng thái')
+    },
   })
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
@@ -291,8 +299,11 @@ export default function AdminUsersPage() {
                   {selectedUser.is_active ? 'Đang hoạt động' : 'Đã bị khóa'}
                 </span>
               </div>
-              <Button variant="destructive" size="sm" onClick={(e) => handleDelete(e as any, selectedUser.id)} loading={deleteMutation.isPending}>
-                Xóa người dùng
+              <Button variant="outline" size="sm" onClick={() => {
+                toggleMutation.mutate(selectedUser.id)
+                setSelectedUser((u: any) => u ? { ...u, is_active: !u.is_active } : u)
+              }} loading={toggleMutation.isPending}>
+                {selectedUser.is_active ? 'Khóa tài khoản' : 'Kích hoạt'}
               </Button>
             </div>
 
