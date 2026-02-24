@@ -52,6 +52,7 @@ router.post('/auth/reset-password', [
 
 router.get('/auth/profile', authenticate, authCtrl.getProfile);
 router.put('/auth/profile', authenticate, authCtrl.updateProfile);
+router.delete('/auth/profile', authenticate, authCtrl.deleteProfile);
 
 // ==================== Upload Route ====================
 

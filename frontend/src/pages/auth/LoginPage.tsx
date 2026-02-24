@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Sun, Moon, Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { Sun, Moon, Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { useAuthStore } from '@/stores/authStore'
@@ -94,14 +94,17 @@ export default function LoginPage() {
               {step === 'register' && (
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Họ và tên</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all"
-                    placeholder="*Nguyễn Văn A"
-                  />
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="w-full h-11 pl-10 pr-4 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all"
+                      placeholder="Nguyễn Văn A"
+                    />
+                  </div>
                 </div>
               )}
 

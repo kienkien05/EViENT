@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Search, UserX, UserCheck, Plus, X, Eye, Shield, Clock,
+  Search, Trash2, Plus, X, Eye, Shield, Clock,
   KeyRound, Mail, Calendar, User as UserIcon, EyeOff
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -50,13 +50,24 @@ export default function AdminUsersPage() {
     queryFn: () => userService.getUsers({ search, page, limit: 20 }).then((r) => r.data),
   })
 
-  const toggleMutation = useMutation({
-    mutationFn: (id: string) => userService.toggleStatus(id),
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => userService.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-      toast.success('Đã cập nhật trạng thái')
+      setShowDetail(false)
+      toast.success('Đã xóa người dùng')
     },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Không thể xóa người dùng')
+    }
   })
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+      deleteMutation.mutate(id)
+    }
+  }
 
   const createMutation = useMutation({
     mutationFn: (data: CreateUserForm) => userService.createUser(data),
@@ -153,9 +164,9 @@ export default function AdminUsersPage() {
                       <Button variant="ghost" size="icon" onClick={() => openDetail(u)} title="Xem chi tiết">
                         <Eye className="size-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => toggleMutation.mutate(u.id)}
-                        title={u.is_active ? 'Khóa tài khoản' : 'Kích hoạt'}>
-                        {u.is_active ? <UserX className="size-4 text-destructive" /> : <UserCheck className="size-4 text-green-600" />}
+                      <Button variant="ghost" size="icon" onClick={(e) => handleDelete(e, u.id)}
+                        title="Xóa người dùng">
+                        <Trash2 className="size-4 text-destructive" />
                       </Button>
                     </div>
                   </td>
@@ -187,8 +198,8 @@ export default function AdminUsersPage() {
                 <Button variant="ghost" size="icon" onClick={() => openDetail(u)}>
                   <Eye className="size-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => toggleMutation.mutate(u.id)}>
-                  {u.is_active ? <UserX className="size-4 text-destructive" /> : <UserCheck className="size-4 text-green-600" />}
+                <Button variant="ghost" size="icon" onClick={(e) => handleDelete(e, u.id)}>
+                  <Trash2 className="size-4 text-destructive" />
                 </Button>
               </div>
             </div>
@@ -280,11 +291,8 @@ export default function AdminUsersPage() {
                   {selectedUser.is_active ? 'Đang hoạt động' : 'Đã bị khóa'}
                 </span>
               </div>
-              <Button variant="outline" size="sm" onClick={() => {
-                toggleMutation.mutate(selectedUser.id)
-                setSelectedUser((u: any) => u ? { ...u, is_active: !u.is_active } : u)
-              }}>
-                {selectedUser.is_active ? 'Khóa tài khoản' : 'Kích hoạt'}
+              <Button variant="destructive" size="sm" onClick={(e) => handleDelete(e as any, selectedUser.id)} loading={deleteMutation.isPending}>
+                Xóa người dùng
               </Button>
             </div>
 

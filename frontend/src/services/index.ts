@@ -26,6 +26,9 @@ export const authService = {
     api.put('/auth/profile', data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
     }),
+
+  deleteProfile: () =>
+    api.delete('/auth/profile'),
 }
 
 export const userService = {

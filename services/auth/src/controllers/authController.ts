@@ -308,3 +308,18 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 
   respond.successWithMessage(res, transformUser(user), 'Profile updated successfully');
 });
+
+/**
+ * DELETE /auth/profile - Self delete current user
+ */
+export const deleteProfile = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findByIdAndDelete(req.user!.id).lean();
+  if (!user) {
+    return respond.notFound(res, 'User not found');
+  }
+
+  // Also clean up any pending OTP codes for this user
+  await OtpCode.deleteMany({ email: user.email });
+
+  respond.successWithMessage(res, null, 'Account deleted successfully', 200);
+});
