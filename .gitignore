@@ -33,3 +33,5 @@ mongodb_data/
 
 event_log_2.txt
 event_log_2_utf8.txt
+mongo_logs.txt
+mongo_logs_utf8.txt
