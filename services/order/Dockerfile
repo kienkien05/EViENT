@@ -11,7 +11,8 @@ COPY services/ ./services/
 RUN npm ci
 
 RUN npm run build:shared
-RUN cd services/order && npm run build
+RUN cd services/order
+RUN npm run build
 
 EXPOSE 3003
 

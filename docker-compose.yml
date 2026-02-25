@@ -18,14 +18,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ==================== MailHog ====================
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: evient-mailhog
-    restart: unless-stopped
-    ports:
-      - '1025:1025'   # SMTP
-      - '8025:8025'   # Web UI
 
   # ==================== API Gateway ====================
   gateway:

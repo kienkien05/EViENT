@@ -339,16 +339,19 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
             process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/vnpay-return';
         const ipAddr = req.ip || req.socket?.remoteAddress || '127.0.0.1';
 
+        const timestamp = Date.now();
+        const txnRef = `${order._id.toString()}_${timestamp}`;
+
         const paymentUrl = buildPaymentUrl({
             amount: totalAmount,
-            orderId: order._id.toString(),
+            orderId: txnRef,
             orderInfo: `Thanh toan don hang ${order._id.toString()}`,
             ipAddr,
             returnUrl,
         });
 
-        // Save the txn ref (using order._id as txn ref)
-        order.vnpayTxnRef = order._id.toString();
+        // Save the txn ref
+        order.vnpayTxnRef = txnRef;
         await order.save();
 
         logger.info(
@@ -391,7 +394,8 @@ export const vnpayIpn = asyncHandler(async (req: Request, res: Response) => {
             return res.json(IpnFailChecksum);
         }
 
-        const orderId = verify.vnp_TxnRef;
+        const txnRef = verify.vnp_TxnRef;
+        const orderId = txnRef.split('_')[0];
         const order = await Order.findById(orderId);
 
         if (!order) {
@@ -445,7 +449,8 @@ export const vnpayReturn = asyncHandler(async (req: Request, res: Response) => {
     try {
         const verify = verifyReturn(req.query as any);
 
-        const orderId = verify.vnp_TxnRef;
+        const txnRef = verify.vnp_TxnRef;
+        const orderId = txnRef.split('_')[0];
         const order = await Order.findById(orderId);
 
         if (!verify.isVerified) {
@@ -529,6 +534,45 @@ export async function cancelExpiredOrders() {
         logger.info(`Cancelled ${expiredOrders.length} expired pending orders`);
     }
 }
+
+// ==================== GET /orders/:id/payment-url - Retry VNPay Payment ====================
+
+export const getPaymentUrlForOrder = asyncHandler(async (req: Request, res: Response) => {
+    const orderId = req.params.id;
+    const order = await Order.findOne({ _id: orderId, userId: req.user!.id });
+
+    if (!order) {
+        return respond.notFound(res, 'Không tìm thấy đơn hàng');
+    }
+
+    if (order.status !== 'pending') {
+        return respond.error(res, 'Chỉ có thể thanh toán đơn hàng đang chờ thanh toán', 400);
+    }
+
+    const returnUrl = process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/vnpay-return';
+    const ipAddr = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+
+    // Generate new txnRef to avoid VNPay duplicates
+    const timestamp = Date.now();
+    const txnRef = `${order._id.toString()}_${timestamp}`;
+
+    const paymentUrl = buildPaymentUrl({
+        amount: order.totalAmount,
+        orderId: txnRef,
+        orderInfo: `Thanh toan don hang ${order._id.toString()}`,
+        ipAddr,
+        returnUrl,
+    });
+
+    order.vnpayTxnRef = txnRef;
+    await order.save();
+
+    return respond.successWithMessage(
+        res,
+        { payment_url: paymentUrl },
+        'Tạo URL thanh toán thành công',
+    );
+});
 
 // ==================== GET /orders/my-tickets ====================
 
