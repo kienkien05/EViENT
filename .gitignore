@@ -30,3 +30,6 @@ mongodb_data/
 
 # Gemini
 .gemini/
+
+event_log_2.txt
+event_log_2_utf8.txt
