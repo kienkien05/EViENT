@@ -58,6 +58,7 @@ export default function AdminOrdersPage() {
 
   const statusColors: Record<string, string> = {
     valid: 'bg-green-500/10 text-green-600 border-green-500/20',
+    pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
     used: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
     cancelled: 'bg-red-500/10 text-red-500 border-red-500/20',
   }
@@ -180,6 +181,7 @@ export default function AdminOrdersPage() {
           options={[
             { value: '', label: 'Tất cả trạng thái' },
             { value: 'valid', label: 'Hợp lệ' },
+            { value: 'pending', label: 'Chờ thanh toán' },
             { value: 'used', label: 'Đã sử dụng' },
             { value: 'cancelled', label: 'Đã hủy' },
           ]} />
@@ -342,6 +344,7 @@ export default function AdminOrdersPage() {
               onChange={v => setEditForm(f => ({ ...f, status: v }))}
               options={[
                 { value: 'valid', label: 'Hợp lệ (valid)' },
+                { value: 'pending', label: 'Chờ TT (pending)' },
                 { value: 'used', label: 'Đã sử dụng (used)' },
                 { value: 'cancelled', label: 'Đã hủy (cancelled)' },
               ]}

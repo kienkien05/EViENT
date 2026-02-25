@@ -93,7 +93,7 @@ export interface ITicketDocument extends Document {
   ticketTypeName: string;
   seatId?: mongoose.Types.ObjectId;
   priceAtPurchase: number;
-  status: 'valid' | 'used' | 'cancelled';
+  status: 'pending' | 'valid' | 'used' | 'cancelled';
   usedAt?: Date;
   // Denormalized snapshots for performance (avoid cross-service queries)
   eventSnapshot?: {
@@ -128,8 +128,8 @@ const ticketSchema = new Schema<ITicketDocument>(
     priceAtPurchase: { type: Number, required: true, min: 0 },
     status: {
       type: String,
-      enum: ['valid', 'used', 'cancelled'],
-      default: 'valid',
+      enum: ['pending', 'valid', 'used', 'cancelled'],
+      default: 'pending',
     },
     usedAt: Date,
     eventSnapshot: {

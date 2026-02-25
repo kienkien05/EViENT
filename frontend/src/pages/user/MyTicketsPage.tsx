@@ -10,12 +10,14 @@ import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   valid: "bg-green-500/10 text-green-600 border-green-500/20",
+  pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
   used: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
 const statusLabels: Record<string, string> = {
   valid: "Hợp lệ",
+  pending: "Đang chờ thanh toán",
   used: "Đã sử dụng",
   cancelled: "Đã hủy",
 };
@@ -153,6 +155,7 @@ export default function MyTicketsPage() {
                         options={[
                           { value: "", label: "Tất cả trạng thái" },
                           { value: "valid", label: "Hợp lệ" },
+                          { value: "pending", label: "Đang chờ thanh toán" },
                           { value: "used", label: "Đã sử dụng" },
                           { value: "cancelled", label: "Đã hủy" },
                         ]}
@@ -277,6 +280,13 @@ export default function MyTicketsPage() {
                   ) : ticket.status === "cancelled" ? (
                     <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-center flex flex-col items-center justify-center h-[152px] w-[152px] sm:h-[184px] sm:w-[184px] p-4">
                       <p className="font-semibold text-sm sm:text-base">Vé đã bị hủy</p>
+                    </div>
+                  ) : ticket.status === "pending" ? (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-xl text-center flex flex-col items-center justify-center h-[152px] w-[152px] sm:h-[184px] sm:w-[184px] p-4">
+                      <p className="font-semibold text-sm sm:text-base">Chờ thanh toán</p>
+                      <p className="text-xs sm:text-sm mt-1 text-yellow-600/80 text-balance">
+                        Vui lòng hoàn tất thanh toán để nhận mã QR
+                      </p>
                     </div>
                   ) : (
                     <div className="bg-muted/30 border border-dashed border-border text-muted-foreground rounded-xl text-center flex flex-col items-center justify-center h-[152px] w-[152px] sm:h-[184px] sm:w-[184px] p-4">
