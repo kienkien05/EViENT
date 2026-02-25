@@ -106,6 +106,12 @@ export const ticketService = {
 
   updateTicket: (id: string, data: Record<string, any>) =>
     api.put(`/tickets/${id}`, data),
+
+  bulkUpdateTickets: (ticketIds: string[], status: string) =>
+    api.put('/tickets/bulk-update', { ticketIds, status }),
+
+  bulkDeleteTickets: (ticketIds: string[]) =>
+    api.delete('/tickets/bulk-delete', { data: { ticketIds } }),
 }
 
 export const roomService = {

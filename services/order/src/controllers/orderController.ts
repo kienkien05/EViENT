@@ -68,10 +68,10 @@ async function generateTicketsForOrder(order: any, ticketStatus: 'valid' | 'pend
                 buyerSnapshot: buyer_info || undefined,
                 seatSnapshot: seatAssignment
                     ? {
-                          roomName: seatAssignment.roomName,
-                          row: seatAssignment.row,
-                          number: seatAssignment.number,
-                      }
+                        roomName: seatAssignment.roomName,
+                        row: seatAssignment.row,
+                        number: seatAssignment.number,
+                    }
                     : undefined,
             });
         }
@@ -643,11 +643,24 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
     const status = req.query.status as string;
     const eventId = req.query.event_id as string;
     const search = req.query.search as string;
+    const dateStr = req.query.date as string;
 
     const filter: any = {};
     if (status) filter.status = status;
     if (eventId) filter.eventId = eventId;
     if (search) filter.ticketCode = { $regex: search, $options: 'i' };
+
+    if (dateStr) {
+        const dateQuery = new Date(dateStr);
+        if (!isNaN(dateQuery.getTime())) {
+            const nextDay = new Date(dateQuery);
+            nextDay.setDate(dateQuery.getDate() + 1);
+            filter.createdAt = {
+                $gte: dateQuery,
+                $lt: nextDay,
+            };
+        }
+    }
 
     const [tickets, total] = await Promise.all([
         Ticket.find(filter)
@@ -850,4 +863,35 @@ export const getRevenueReport = asyncHandler(async (req: Request, res: Response)
     const grandTotal = data.reduce((sum: number, item: any) => sum + item.totalRevenue, 0);
 
     respond.success(res, { data, grandTotal });
+});
+
+export const bulkUpdateTickets = asyncHandler(async (req: Request, res: Response) => {
+    const { ticketIds, status } = req.body;
+
+    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+        return respond.error(res, 'Mảng Ticket IDs không được trống');
+    }
+
+    if (!status || !['valid', 'used', 'cancelled'].includes(status)) {
+        return respond.error(res, 'Trạng thái không hợp lệ');
+    }
+
+    const result = await Ticket.updateMany(
+        { _id: { $in: ticketIds } },
+        { $set: { status } }
+    );
+
+    respond.successMessage(res, `Đã cập nhật trạng thái thành công cho ${result.modifiedCount} vé`);
+});
+
+export const bulkDeleteTickets = asyncHandler(async (req: Request, res: Response) => {
+    const { ticketIds } = req.body;
+
+    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+        return respond.error(res, 'Mảng Ticket IDs không được trống');
+    }
+
+    const result = await Ticket.deleteMany({ _id: { $in: ticketIds } });
+
+    respond.successMessage(res, `Đã xóa thành công ${result.deletedCount} vé`);
 });
