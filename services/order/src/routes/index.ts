@@ -67,4 +67,15 @@ router.post(
 router.delete('/orders/:id', authenticate, authorize('admin'), ctrl.deleteOrder);
 router.put('/tickets/:id', authenticate, authorize('admin'), ctrl.updateTicket);
 
+router.put('/tickets/bulk-update', authenticate, authorize('admin'), [
+  body('ticketIds').isArray({ min: 1 }).withMessage('Ticket IDs array is required'),
+  body('status').isIn(['valid', 'used', 'cancelled']).withMessage('Invalid status'),
+  validate,
+], ctrl.bulkUpdateTickets);
+
+router.delete('/tickets/bulk-delete', authenticate, authorize('admin'), [
+  body('ticketIds').isArray({ min: 1 }).withMessage('Ticket IDs array is required'),
+  validate,
+], ctrl.bulkDeleteTickets);
+
 export default router;

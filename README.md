@@ -229,6 +229,7 @@ _Cảm ơn tất cả những người đã đóng góp cho dự án:_
 
 **[MIT License](LICENSE) © [Lê Huy Giang](https://github.com/lehuygiang28)**
 
-_Made with ❤️ in Vietnam_
+## 📄 License
 
-</div>
+Private project © 2026
+All Rights Reserved.
