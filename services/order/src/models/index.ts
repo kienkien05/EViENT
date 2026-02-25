@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 // ==================== Order Schema ====================
 
@@ -18,6 +18,21 @@ export interface IOrderDocument extends Document {
   };
   status: 'pending' | 'paid' | 'cancelled' | 'refunded';
   paymentMethod?: string;
+  vnpayTxnRef?: string;
+  paidAt?: Date;
+  eventSnapshot?: {
+    title: string;
+    startTime?: Date;
+    endTime?: Date;
+    location?: string;
+    bannerImage?: string;
+  };
+  seatAssignmentsSnapshot?: Array<{
+    roomName: string;
+    row: string;
+    number: number;
+    ticket_type_id?: string;
+  }>;
   createdAt: Date;
 }
 
@@ -42,6 +57,21 @@ const orderSchema = new Schema<IOrderDocument>(
       default: 'pending',
     },
     paymentMethod: String,
+    vnpayTxnRef: { type: String, index: true },
+    paidAt: Date,
+    eventSnapshot: {
+      title: String,
+      startTime: Date,
+      endTime: Date,
+      location: String,
+      bannerImage: String,
+    },
+    seatAssignmentsSnapshot: [{
+      roomName: String,
+      row: String,
+      number: Number,
+      ticket_type_id: String,
+    }],
   },
   { timestamps: true }
 );

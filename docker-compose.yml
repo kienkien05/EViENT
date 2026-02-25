@@ -110,6 +110,10 @@ services:
       MONGODB_ORDER_DB: evient_orders
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_me}
       NOTIFICATION_SERVICE_URL: http://notification:3004
+      VNP_TMNCODE: ${VNP_TMNCODE:-1TMZO03Y}
+      VNP_HASHSECRET: ${VNP_HASHSECRET:-DXPBQA1KSOCJQN0UH1QZCK15FZ5BH3IX}
+      VNP_URL: ${VNP_URL:-https://sandbox.vnpayment.vn}
+      VNP_RETURN_URL: ${VNP_RETURN_URL:-http://localhost:5173/payment/vnpay-return}
     depends_on:
       mongodb:
         condition: service_healthy

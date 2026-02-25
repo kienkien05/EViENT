@@ -1,6 +1,7 @@
+import { createLogger, errorHandler } from '@evient/shared';
 import express from 'express';
 import mongoose from 'mongoose';
-import { createLogger, errorHandler } from '@evient/shared';
+import { cancelExpiredOrders } from './controllers/orderController';
 import routes from './routes';
 
 const app = express();
@@ -30,6 +31,15 @@ async function start() {
     await mongoose.connect(`${MONGO_URI}/${DB_NAME}`, { maxPoolSize: 10 });
     logger.info(`Connected to MongoDB: ${DB_NAME}`);
     app.listen(PORT, () => logger.info(`Order Service running on port ${PORT}`));
+
+    // Run expired order cleanup every 5 minutes
+    setInterval(async () => {
+      try {
+        await cancelExpiredOrders();
+      } catch (err) {
+        logger.error('Error running cancelExpiredOrders:', err);
+      }
+    }, 5 * 60 * 1000);
   } catch (err) {
     logger.error('Failed to start Order Service:', err);
     process.exit(1);
@@ -38,3 +48,4 @@ async function start() {
 
 start();
 export default app;
+

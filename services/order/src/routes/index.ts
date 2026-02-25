@@ -1,9 +1,14 @@
+import { authenticate, authorize, validate, validators } from '@evient/shared';
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { authenticate, authorize, validate, validators } from '@evient/shared';
 import * as ctrl from '../controllers/orderController';
 
 const router = Router();
+
+// ==================== VNPay Callbacks (NO AUTH — called by VNPay server) ====================
+
+router.get('/orders/vnpay-ipn', ctrl.vnpayIpn);
+router.get('/orders/vnpay-return', ctrl.vnpayReturn);
 
 // ==================== Orders (authenticated users) ====================
 
@@ -45,3 +50,4 @@ router.delete('/orders/:id', authenticate, authorize('admin'), ctrl.deleteOrder)
 router.put('/tickets/:id', authenticate, authorize('admin'), ctrl.updateTicket);
 
 export default router;
+

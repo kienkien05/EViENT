@@ -1,17 +1,16 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
-import { Calendar, MapPin, Ticket, AlertCircle, Image } from 'lucide-react'
-import { toast } from 'sonner'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { eventService, orderService, roomService } from '@/services'
-import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import SeatMap, { Room, Seat } from '@/components/ui/SeatMap'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { getImageUrl, formatDateTime, formatPrice } from '@/lib/utils'
-import SeatMap, { Seat, Room } from '@/components/ui/SeatMap'
+import { formatDateTime, formatPrice, getImageUrl } from '@/lib/utils'
+import { eventService, orderService, roomService } from '@/services'
+import { useAuthStore } from '@/stores/authStore'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
+import { Calendar, ChevronLeft, ChevronRight, Image, MapPin, Ticket } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -255,7 +254,7 @@ export default function EventDetailPage() {
         ticket_type_id: s.ticketTypeId
       }))
 
-      await orderService.createOrder({
+      const res = await orderService.createOrder({
         event_id: id,
         items,
         seat_assignments: seat_assignments.length > 0 ? seat_assignments : undefined,
@@ -271,6 +270,16 @@ export default function EventDetailPage() {
           bannerImage: event.banner_image || event.bannerImage,
         },
       })
+
+      // Check if backend returned a VNPay payment URL (paid order)
+      const paymentUrl = res.data?.data?.payment_url
+      if (paymentUrl) {
+        toast.info('Đang chuyển đến trang thanh toán VNPay...')
+        window.location.href = paymentUrl
+        return
+      }
+
+      // Free order — direct success
       toast.success('Mua vé thành công!')
       queryClient.invalidateQueries({ queryKey: ['event', id] })
       setShowBuyModal(false)

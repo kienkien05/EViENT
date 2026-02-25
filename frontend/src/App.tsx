@@ -1,11 +1,11 @@
-import { Suspense, lazy, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services'
+import { useAuthStore } from '@/stores/authStore'
+import { Suspense, lazy, useEffect } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 // Layouts
-import UserLayout from '@/components/layout/UserLayout'
 import AdminLayout from '@/components/layout/AdminLayout'
+import UserLayout from '@/components/layout/UserLayout'
 
 // Lazy load all pages for code splitting
 const HomePage = lazy(() => import('@/pages/user/HomePage'))
@@ -16,6 +16,7 @@ const WalletPage = lazy(() => import('@/pages/user/WalletPage'))
 const MyTicketsPage = lazy(() => import('@/pages/user/MyTicketsPage'))
 const ContactPage = lazy(() => import('@/pages/user/ContactPage'))
 const SearchPage = lazy(() => import('@/pages/user/SearchPage'))
+const PaymentReturnPage = lazy(() => import('@/pages/user/PaymentReturnPage'))
 
 // Auth pages
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
@@ -104,6 +105,7 @@ export default function App() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/payment/vnpay-return" element={<PaymentReturnPage />} />
           <Route
             path="/profile"
             element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}

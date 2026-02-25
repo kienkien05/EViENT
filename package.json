@@ -34,6 +34,8 @@
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
-    "dotenv": "^17.3.1"
+    "dotenv": "^17.3.1",
+    "vnpay": "file:../",
+    "qs": "^6.12.0"
   }
 }
