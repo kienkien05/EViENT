@@ -101,11 +101,9 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     sum + (Number(item.unit_price) * item.quantity), 0
   );
 
-  // If amount > 0 and no payment method specified, default to vnpay
-  const method = payment_method || (totalAmount > 0 ? 'vnpay' : 'free');
-
-  // Create order in 'pending' if payment is required (vnpay), otherwise 'paid' for 'free'
-  const isFree = totalAmount === 0 || method === 'free';
+  // Create order in 'paid' status directly, omitting VNPay logic
+  const isFree = true; // Always true to skip VNPay and generate tickets immediately
+  const method = 'free';
 
   const order = await Order.create({
     userId,
@@ -123,26 +121,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     seatAssignmentsSnapshot: seat_assignments || [], // Save seats to order in case payment delayed
   });
 
-  // If payment is VNPay, do not generate tickets yet. Return payment URL.
-  if (!isFree && method === 'vnpay') {
-    const { buildVNPayUrl } = await import('../utils/vnpay');
-    const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-    
-    // Convert array to string or fallback
-    const ipString = Array.isArray(ipAddr) ? ipAddr[0] : ipAddr;
-    
-    const paymentUrl = buildVNPayUrl(
-      totalAmount,
-      order._id.toString(),
-      ipString,
-      `EViENT - Thanh toan ve su kien ${order._id}`
-    );
-
-    return respond.successWithMessage(res, {
-      order: transformOrder(order.toObject()),
-      paymentUrl,
-    }, 'Order pending payment', 201);
-  }
+  // VNPay Logic removed as requested. Directly proceed to ticket generation.
 
   // --- BEGIN LOGIC FOR FREE ORDERS ---
   // Generate tickets in bulk
@@ -182,10 +161,12 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   // Bulk insert tickets (1 DB call instead of N)
   const tickets = await Ticket.insertMany(ticketDocs);
 
-  // Send in-app notification
+  // Send in-app notification & Email tickets
   try {
     const axios = (await import('axios')).default;
     const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
+    
+    // In-app notification
     await axios.post(`${notificationUrl}/api/notifications/user-notifications`, {
       user_id: userId,
       title: 'Đặt vé thành công',
@@ -193,6 +174,24 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       type: 'ticket_booked',
       link: '/my-tickets',
     });
+
+    // Send emails (each ticket gets 1 email)
+    if (buyer_info?.email && tickets && tickets.length > 0) {
+      const emailPromises = tickets.map((t: any) => {
+        return axios.post(`${notificationUrl}/api/notifications/send-ticket`, {
+          email: buyer_info.email,
+          event_title: event_snapshot?.title || (event as any)?.title || 'Sự kiện',
+          event_date: event_snapshot?.startTime ? new Date(event_snapshot.startTime).toLocaleString('vi-VN') : undefined,
+          event_location: event_snapshot?.location || undefined,
+          tickets: [{
+             ticket_code: t.ticketCode,
+             ticket_type_name: t.ticketTypeName,
+             seat: t.seatSnapshot ? `${t.seatSnapshot.row} - Số ${t.seatSnapshot.number}` : undefined
+          }]
+        });
+      });
+      Promise.allSettled(emailPromises).catch(console.error);
+    }
 
     // Track activity
     if (tickets && tickets.length > 0) {
