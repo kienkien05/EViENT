@@ -337,12 +337,18 @@ export default function MyTicketsPage() {
                                 </div>
 
                                 <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm border-t border-border pt-4 text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                        Mã vé:{' '}
-                                        <span className="font-mono bg-muted px-2 py-0.5 rounded-md text-foreground">
-                                            {ticket.ticket_code}
-                                        </span>
-                                    </div>
+                                    {ticket.status === 'valid' || ticket.status === 'used' ? (
+                                        <div className="flex items-center gap-2">
+                                            Mã vé:{' '}
+                                            <span className="font-mono bg-muted px-2 py-0.5 rounded-md text-foreground">
+                                                {ticket.ticket_code}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-muted-foreground/60 italic text-xs">
+                                            Mã vé sẽ hiện sau khi thanh toán
+                                        </div>
+                                    )}
                                     <span className="font-medium text-foreground">
                                         {ticket.price_at_purchase > 0
                                             ? formatPrice(ticket.price_at_purchase)
