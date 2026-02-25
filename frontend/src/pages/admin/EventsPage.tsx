@@ -311,7 +311,7 @@ export default function AdminEventsPage() {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden">
+      <div className="hidden md:block bg-card border border-border rounded-xl">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-border bg-muted/50">
             <th className="text-left p-3 font-medium">Tên sự kiện</th>
