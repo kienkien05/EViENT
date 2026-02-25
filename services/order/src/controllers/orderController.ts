@@ -815,33 +815,21 @@ export const getRevenueReport = asyncHandler(async (req: Request, res: Response)
         if (endDate) match.createdAt.$lte = new Date(endDate as string);
     }
 
-    const revenueByEvent = await Order.aggregate([
+    const revenueByDate = await Order.aggregate([
         { $match: match },
         {
             $group: {
-                _id: '$eventId',
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" } },
                 totalRevenue: { $sum: '$totalAmount' },
                 totalTickets: { $sum: { $sum: '$items.quantity' } },
                 orderCount: { $sum: 1 },
             },
         },
-        { $sort: { totalRevenue: -1 } },
+        { $sort: { _id: -1 } },
     ]);
 
-    const EventModel = (await import('../models')).EventLocal;
-    const eventIds = revenueByEvent.map((r: any) => r._id);
-    const events = await EventModel.find({ _id: { $in: eventIds } })
-        .select('title')
-        .lean();
-
-    const eventMap = events.reduce((acc: any, ev: any) => {
-        acc[ev._id.toString()] = ev.title;
-        return acc;
-    }, {});
-
-    const data = revenueByEvent.map((r: any) => ({
-        eventId: r._id,
-        eventTitle: eventMap[r._id?.toString()] || 'Sự kiện không xác định',
+    const data = revenueByDate.map((r: any) => ({
+        date: r._id,
         totalRevenue: r.totalRevenue,
         totalTickets: r.totalTickets,
         orderCount: r.orderCount,

@@ -205,7 +205,7 @@ export default function ReportsPage() {
                   <table className="w-full text-sm text-left">
                     <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b">
                       <tr>
-                        <th className="px-6 py-4 font-medium">Sự kiện</th>
+                        <th className="px-6 py-4 font-medium">Ngày</th>
                         <th className="px-6 py-4 font-medium text-right">Số đơn hàng</th>
                         <th className="px-6 py-4 font-medium text-right">Số vé bán</th>
                         <th className="px-6 py-4 font-medium text-right">Doanh thu</th>
@@ -213,8 +213,10 @@ export default function ReportsPage() {
                     </thead>
                     <tbody>
                       {revenueData.data.map((item: any, i: number) => (
-                        <tr key={item.eventId} className={`bg-background hover:bg-muted/50 ${i !== revenueData.data.length - 1 ? 'border-b' : ''}`}>
-                          <td className="px-6 py-4 font-medium text-foreground">{item.eventTitle}</td>
+                        <tr key={item.date} className={`bg-background hover:bg-muted/50 ${i !== revenueData.data.length - 1 ? 'border-b' : ''}`}>
+                          <td className="px-6 py-4 font-medium text-foreground">
+                            {new Date(item.date).toLocaleDateString('vi-VN')}
+                          </td>
                           <td className="px-6 py-4 text-right text-muted-foreground">{item.orderCount}</td>
                           <td className="px-6 py-4 text-right text-muted-foreground">{item.totalTickets}</td>
                           <td className="px-6 py-4 text-right font-semibold text-green-600">
