@@ -9,7 +9,7 @@ import { Request, Response } from 'express';
 import { customAlphabet } from 'nanoid';
 import QRCode from 'qrcode';
 import {
-    InpOrderAlreadyConfirmed,
+    IpnOrderAlreadyConfirmed,
     IpnFailChecksum,
     IpnInvalidAmount,
     IpnOrderNotFound,
@@ -409,7 +409,7 @@ export const vnpayIpn = asyncHandler(async (req: Request, res: Response) => {
 
         if (order.status === 'paid') {
             logger.info(`VNPay IPN: order ${orderId} already confirmed`);
-            return res.json(InpOrderAlreadyConfirmed);
+            return res.json(IpnOrderAlreadyConfirmed);
         }
 
         if (verify.isSuccess) {
@@ -424,13 +424,17 @@ export const vnpayIpn = asyncHandler(async (req: Request, res: Response) => {
             return res.json(IpnSuccess);
         } else {
             // Payment failed — cancel order and tickets, restore quantities
-            order.status = 'cancelled';
-            await order.save();
+            if (order.status === 'pending') {
+                order.status = 'cancelled';
+                await order.save();
 
-            await cancelTicketsForOrder(order._id);
-            await restoreTicketQuantities(order);
+                await cancelTicketsForOrder(order._id);
+                await restoreTicketQuantities(order);
 
-            logger.info(`VNPay IPN: order ${orderId} payment failed, cancelled`);
+                logger.info(`VNPay IPN: order ${orderId} payment failed, cancelled`);
+            } else {
+                logger.info(`VNPay IPN: order ${orderId} payment failed but order is already ${order.status}`);
+            }
             return res.json(IpnSuccess); // Still return success to VNPay (we received the notification)
         }
     } catch (error: any) {
@@ -518,11 +522,16 @@ export async function cancelExpiredOrders() {
     });
 
     for (const order of expiredOrders) {
-        order.status = 'cancelled';
-        await order.save();
-        await cancelTicketsForOrder(order._id);
-        await restoreTicketQuantities(order);
-        logger.info(`Auto-cancelled expired order ${order._id}`);
+        const result = await Order.updateOne(
+            { _id: order._id, status: 'pending' },
+            { $set: { status: 'cancelled' } }
+        );
+
+        if (result.modifiedCount > 0) {
+            await cancelTicketsForOrder(order._id);
+            await restoreTicketQuantities(order);
+            logger.info(`Auto-cancelled expired order ${order._id}`);
+        }
     }
 
     if (expiredOrders.length > 0) {
@@ -605,7 +614,6 @@ export const getSoldSeats = asyncHandler(async (req: Request, res: Response) => 
     const tickets = await Ticket.find({
         eventId: eventId as any,
         status: { $in: ['valid', 'used'] },
-        route: { $exists: false },
     })
         .select('seatSnapshot')
         .lean();
@@ -745,7 +753,6 @@ export const getTicketInfo = asyncHandler(async (req: Request, res: Response) =>
                     fullName: user.full_name || user.fullName || '',
                     email: user.email || '',
                 };
-                await ticket.save();
                 logger.info(
                     `Backfilled buyerSnapshot for ticket ${ticket.ticketCode}: ${user.full_name || user.fullName}`,
                 );
@@ -766,8 +773,39 @@ export const resendTicketEmail = asyncHandler(async (req: Request, res: Response
         return respond.notFound(res, 'Ticket not found');
     }
 
-    logger.info(`[TODO] Resend email for ticket ${ticket.ticketCode}`);
-    respond.successMessage(res, 'Ticket email resent successfully');
+    const email = ticket.buyerSnapshot?.email;
+    if (!email) {
+        return respond.error(res, 'Vé không có địa chỉ email người mua', 400);
+    }
+
+    try {
+        const axios = (await import('axios')).default;
+        const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
+        
+        await axios.post(`${notificationUrl}/api/notifications/send-ticket`, {
+            email: email,
+            event_title: ticket.eventSnapshot?.title || 'Sự kiện',
+            event_date: ticket.eventSnapshot?.startTime
+                ? new Date(ticket.eventSnapshot.startTime).toLocaleString('vi-VN')
+                : undefined,
+            event_location: ticket.eventSnapshot?.location || undefined,
+            tickets: [
+                {
+                    ticket_code: ticket.ticketCode,
+                    ticket_type_name: ticket.ticketTypeName,
+                    seat: ticket.seatSnapshot
+                        ? `${ticket.seatSnapshot.row} - Số ${ticket.seatSnapshot.number}`
+                        : undefined,
+                },
+            ],
+        });
+        
+        logger.info(`Resent email for ticket ${ticket.ticketCode} to ${email}`);
+        respond.successMessage(res, 'Gửi lại email vé thành công');
+    } catch (err: any) {
+        logger.error(`Failed to resend email for ticket ${ticket.ticketCode}:`, err.message);
+        return respond.error(res, 'Lỗi khi gửi lại email', 500);
+    }
 });
 
 export const deleteOrder = asyncHandler(async (req: Request, res: Response) => {
