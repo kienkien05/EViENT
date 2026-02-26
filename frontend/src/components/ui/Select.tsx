@@ -44,7 +44,7 @@ export function Select({ value, onChange, options, placeholder = 'Chọn...', cl
   }, [open])
 
   return (
-    <div ref={ref} className={`relative ${className}`}>
+    <div ref={ref} className={`relative ${open ? 'z-50' : ''} ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

@@ -380,6 +380,15 @@ docker-compose down
 
 ---
 
+## 👥 Tài khoản mặc định
+
+| Role      | Email             | Mật khẩu   |
+| --------- | ----------------- | ---------- |
+| **Admin** | `admin@evient.vn` | `admin123` |
+| **User**  | `user@evient.vn`  | `user123`  |
+
+---
+
 ## 📄 License
 
 Private project © 2026
