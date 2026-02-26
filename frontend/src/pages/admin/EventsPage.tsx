@@ -11,6 +11,8 @@ import {
     ChevronRight,
     DoorOpen,
     Edit,
+    Eye,
+    EyeOff,
     Image,
     LoaderIcon,
     Plus,
@@ -34,6 +36,7 @@ interface TicketTypeForm {
     quantity_total: number;
     quantity_sold: number;
     max_per_user: number;
+    status: 'active' | 'sold_out' | 'hidden';
 }
 
 interface EventForm {
@@ -86,6 +89,7 @@ const emptyTicket: TicketTypeForm = {
     quantity_total: 100,
     quantity_sold: 0,
     max_per_user: -1,
+    status: 'active',
 };
 
 const emptyBanner: BannerForm = {
@@ -219,6 +223,7 @@ export default function AdminEventsPage() {
                 quantity_total: tt.quantity_total ?? 0,
                 quantity_sold: tt.quantity_sold || 0,
                 max_per_user: tt.max_per_user ?? e.max_tickets_per_user ?? 10,
+                status: tt.status || 'active',
             })),
         });
 
@@ -688,18 +693,43 @@ export default function AdminEventsPage() {
                             {form.ticket_types.map((tt, idx) => (
                                 <div
                                     key={idx}
-                                    className="border border-border rounded-lg p-4 space-y-3"
+                                    className={cn(
+                                        'border rounded-lg p-4 space-y-3 transition-colors',
+                                        tt.status === 'hidden' ? 'border-amber-500/40 bg-amber-500/5' : 'border-border'
+                                    )}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium text-muted-foreground">
-                                            Loại vé #{idx + 1}
-                                        </span>
-                                        <button
-                                            onClick={() => removeTicketType(idx)}
-                                            className="text-muted-foreground hover:text-destructive transition-colors"
-                                        >
-                                            <X className="size-4" />
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium text-muted-foreground">
+                                                Loại vé #{idx + 1}
+                                            </span>
+                                            {tt.status === 'hidden' && (
+                                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                                    Đang ẩn
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => updateTicketType(idx, 'status', tt.status === 'hidden' ? 'active' : 'hidden')}
+                                                className={cn(
+                                                    'p-1 rounded transition-colors',
+                                                    tt.status === 'hidden'
+                                                        ? 'text-amber-500 hover:text-amber-600 bg-amber-500/10'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                )}
+                                                title={tt.status === 'hidden' ? 'Hiện loại vé này trên trang bán' : 'Ẩn loại vé (chỉ dùng cấp thủ công)'}
+                                            >
+                                                {tt.status === 'hidden' ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                            </button>
+                                            <button
+                                                onClick={() => removeTicketType(idx)}
+                                                className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                                            >
+                                                <X className="size-4" />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

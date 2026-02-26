@@ -442,7 +442,7 @@ export default function EventDetailPage() {
               Loại vé
             </h2>
             <div className="space-y-3">
-              {event.ticket_types.map((tt: any) => {
+              {event.ticket_types.filter((tt: any) => tt.status !== 'hidden').map((tt: any) => {
                 const ttId = tt._id || tt.id;
                 return (
                   <div
@@ -500,7 +500,7 @@ export default function EventDetailPage() {
             <div className={`${eventRoom && processedRoom?.seats?.some(s => s.isActive) ? 'flex-1 border-r border-border pr-6' : 'w-full'} overflow-y-auto custom-scrollbar`}>
               <h3 className="font-semibold mb-3">Số lượng vé</h3>
               <div className="space-y-4">
-                {event.ticket_types?.map((tt: any) => {
+                {event.ticket_types?.filter((tt: any) => tt.status !== 'hidden').map((tt: any) => {
                   const ttId = tt._id || tt.id
                   const isUnlimited = tt.quantity_total === -1;
                   const remaining = isUnlimited ? Infinity : Math.max(0, (tt.quantity_total || 0) - (tt.quantity_sold || 0))

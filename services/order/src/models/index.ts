@@ -38,7 +38,7 @@ export interface IOrderDocument extends Document {
 
 const orderSchema = new Schema<IOrderDocument>(
   {
-    userId: { type: Schema.Types.ObjectId, required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, index: true },
     eventId: { type: Schema.Types.ObjectId, required: true, index: true },
     items: [{
       ticketTypeId: { type: Schema.Types.ObjectId, required: true },
@@ -119,7 +119,7 @@ const ticketSchema = new Schema<ITicketDocument>(
   {
     ticketCode: { type: String, required: true, unique: true, index: true },
     qrCode: { type: String, required: true },
-    userId: { type: Schema.Types.ObjectId, required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, index: true },
     eventId: { type: Schema.Types.ObjectId, required: true, index: true },
     orderId: { type: Schema.Types.ObjectId, required: true, index: true },
     ticketTypeId: { type: Schema.Types.ObjectId, required: true },

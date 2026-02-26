@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Trash2, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { ticketService, userService, eventService, orderService } from '@/services'
+import { ticketService, userService, eventService, orderService, roomService } from '@/services'
 import { TableRowSkeleton } from '@/components/ui/Skeleton'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { cn, formatDateTime } from '@/lib/utils'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import SeatMap, { Room, Seat } from '@/components/ui/SeatMap'
+import { useMemo } from 'react'
 
 export default function AdminOrdersPage() {
   const [search, setSearch] = useState('')
@@ -21,8 +24,12 @@ export default function AdminOrdersPage() {
 
   // Grant Ticket Modal State
   const [showGrantModal, setShowGrantModal] = useState(false)
+  const [grantTab, setGrantTab] = useState<'system' | 'email'>('system')
+  const [selectedSeats, setSelectedSeats] = useState<{ seat: Seat; ticketTypeId: string }[]>([])
   const [grantForm, setGrantForm] = useState({
     user_id: '',
+    guest_name: '',
+    guest_email: '',
     event_id: '',
     ticket_type_id: '',
     quantity: 1,
@@ -60,6 +67,79 @@ export default function AdminOrdersPage() {
   const users = usersData?.data || []
   const events = eventsData?.data || []
 
+  // -------------- Seat Selection Logic ------------------ //
+  const { data: allRoomsRes, isLoading: isRoomsLoading } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: () => roomService.getRooms().then((r: any) => r.data),
+    enabled: showGrantModal,
+  })
+
+  const { data: soldSeatsRes } = useQuery({
+    queryKey: ['sold-seats', grantForm.event_id],
+    queryFn: () => orderService.getSoldSeats(grantForm.event_id).then((r: any) => r.data),
+    enabled: showGrantModal && !!grantForm.event_id,
+  })
+
+  const soldSeats: string[] = Array.isArray(soldSeatsRes?.data) ? soldSeatsRes.data : []
+  const selectedEvent = events.find((e: any) => e.id === grantForm.event_id || e._id === grantForm.event_id)
+  
+  const eventRoom = useMemo(() => {
+    if (!selectedEvent || !allRoomsRes) return null
+    const roomsArray = Array.isArray(allRoomsRes) ? allRoomsRes : (allRoomsRes as any).data || []
+    return roomsArray.find((r: any) => r.events?.some((e: any) => e.id === selectedEvent.id || e._id === selectedEvent.id)) as Room | null
+  }, [selectedEvent, allRoomsRes])
+
+  const ticketTypes = selectedEvent?.ticket_types || []
+
+  const processedRoom = useMemo(() => {
+    if (!eventRoom || !grantForm.event_id) return null
+
+    // For manual grant, we just check if the selected ticket type is valid for seats
+    const newSeats = eventRoom.seats.map(s => {
+       if (!s.isActive) return s;
+
+       const eventLocks = (s as any).locks?.filter((l: any) => l.eventId === grantForm.event_id) || [];
+       if (eventLocks.length > 0) {
+           const hasGeneralEventLock = eventLocks.some((l: any) => !l.ticketTypeId)
+           if (hasGeneralEventLock) return { ...s, isActive: false }
+           
+           // If seat locked to specific types, check if the admin selected that type
+           if (grantForm.ticket_type_id) {
+             const isMatchedToCart = eventLocks.some((l: any) => l.ticketTypeId === grantForm.ticket_type_id)
+             if (isMatchedToCart) return { ...s, isActive: true }
+           }
+           return { ...s, isActive: false }
+       }
+       return s; // available to anyone if no specific lock
+    })
+
+    return { ...eventRoom, seats: newSeats }
+  }, [eventRoom, grantForm.ticket_type_id, grantForm.event_id])
+
+  const handleSeatToggle = (seat: Seat) => {
+    if (!grantForm.ticket_type_id) {
+       toast.error("Vui lòng chọn loại vé trước khi chọn ghế")
+       return
+    }
+
+    setSelectedSeats(prev => {
+      const existingSelection = prev.find(s => s.seat.id === seat.id)
+      
+      if (existingSelection) {
+        return prev.filter(s => s.seat.id !== seat.id)
+      } else {
+        const currentSelectedQtyForType = prev.filter(s => s.ticketTypeId === grantForm.ticket_type_id).length
+        if (currentSelectedQtyForType >= grantForm.quantity) {
+             toast.info(`Bạn chỉ đang cấp ${grantForm.quantity} vé loại này, không thể chọn thêm ghế.`)
+             return prev
+        }
+        return [...prev, { seat, ticketTypeId: grantForm.ticket_type_id }]
+      }
+    })
+  }
+
+  // -------------- End Seat Selection Logic ------------------ //
+
   const statusColors: Record<string, string> = {
     valid: 'bg-green-500/10 text-green-600 border-green-500/20',
     pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
@@ -67,19 +147,15 @@ export default function AdminOrdersPage() {
     cancelled: 'bg-red-500/10 text-red-500 border-red-500/20',
   }
 
-  // Derive specific ticket types for currently selected event
-  const selectedEvent = events.find((e: any) => e.id === grantForm.event_id)
-  const ticketTypes = selectedEvent?.ticket_types || []
-
   // Grant Mutation
   const grantTicketMutation = useMutation({
     mutationFn: async () => {
       const tt = ticketTypes.find((t: any) => t.id === grantForm.ticket_type_id || t._id === grantForm.ticket_type_id)
       if (!tt) throw new Error('Vui lòng chọn loại vé')
 
-      const payload = {
-        user_id: grantForm.user_id,
+      const payload: any = {
         event_id: grantForm.event_id,
+        event_snapshot: selectedEvent,
         payment_method: 'free',
         items: [
           {
@@ -90,13 +166,34 @@ export default function AdminOrdersPage() {
           }
         ]
       }
+
+      if (grantTab === 'system') {
+        payload.user_id = grantForm.user_id;
+      } else {
+        payload.buyer_info = {
+          fullName: grantForm.guest_name,
+          email: grantForm.guest_email
+        };
+      }
+
+      const hasSelectableSeats = eventRoom && processedRoom?.seats?.some(s => s.isActive)
+      if (hasSelectableSeats && selectedSeats.length > 0) {
+        payload.seat_assignments = selectedSeats.map(s => ({
+          roomName: eventRoom?.name || 'Phòng chiếu',
+          row: s.seat.row,
+          number: s.seat.number,
+          ticket_type_id: s.ticketTypeId
+        }))
+      }
+
       return orderService.createOrder(payload)
     },
     onSuccess: () => {
       toast.success('Cấp vé thành công!')
       setShowGrantModal(false)
       queryClient.invalidateQueries({ queryKey: ['admin', 'tickets'] })
-      setGrantForm({ user_id: '', event_id: '', ticket_type_id: '', quantity: 1 })
+      setGrantForm({ user_id: '', guest_name: '', guest_email: '', event_id: '', ticket_type_id: '', quantity: 1 })
+      setSelectedSeats([])
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Có lỗi khi cấp vé. Thử lại sau.')
@@ -104,10 +201,33 @@ export default function AdminOrdersPage() {
   })
 
   const handleGrant = () => {
-    if (!grantForm.user_id || !grantForm.event_id || !grantForm.ticket_type_id || grantForm.quantity < 1) {
-      toast.error('Vui lòng điền đủ thông tin để cấp vé')
+    if (!grantForm.event_id || !grantForm.ticket_type_id || grantForm.quantity < 1) {
+      toast.error('Vui lòng điền đủ thông tin sự kiện, loại vé và số lượng')
       return
     }
+
+    if (grantTab === 'system' && !grantForm.user_id) {
+      toast.error('Vui lòng chọn người dùng nhận vé')
+      return
+    }
+
+    if (grantTab === 'email' && (!grantForm.guest_name || !grantForm.guest_email)) {
+      toast.error('Vui lòng nhập tên và email khách mời')
+      return
+    }
+    
+    // Basic email validation
+    if (grantTab === 'email' && !/^\S+@\S+\.\S+$/.test(grantForm.guest_email)) {
+      toast.error('Email khách mời không hợp lệ')
+      return
+    }
+
+    const hasSelectableSeats = eventRoom && processedRoom?.seats?.some(s => s.isActive)
+    if (hasSelectableSeats && selectedSeats.length !== grantForm.quantity) {
+      toast.error(`Vui lòng chọn đủ ${grantForm.quantity} ghế trên sơ đồ cho số lượng vé.`)
+      return
+    }
+
     grantTicketMutation.mutate()
   }
 
@@ -383,74 +503,175 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Grant Ticket Modal */}
-      <Modal isOpen={showGrantModal} onClose={() => setShowGrantModal(false)} title="Cấp vé thủ công">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Người dùng nhận vé</label>
-            <Select
-              value={grantForm.user_id}
-              onChange={v => setGrantForm(f => ({ ...f, user_id: v }))}
-              placeholder="-- Chọn khách hàng --"
-              options={[
-                { value: '', label: '-- Chọn khách hàng --' },
-                ...users.map((u: any) => ({ value: u.id, label: `${u.full_name} (${u.email})` })),
-              ]}
-            />
+      <Modal isOpen={showGrantModal} onClose={() => setShowGrantModal(false)} title="Cấp vé thủ công" size={eventRoom && processedRoom?.seats?.some(s => s.isActive) ? "lg" : "md"}>
+        <div className={`flex flex-col ${eventRoom && processedRoom?.seats?.some(s => s.isActive) ? 'md:flex-row' : ''} gap-6 ${eventRoom && processedRoom?.seats?.some(s => s.isActive) ? 'h-[75vh] md:h-auto' : ''} overflow-hidden pt-2`}>
+          
+          <div className={`${eventRoom && processedRoom?.seats?.some(s => s.isActive) ? 'flex-[1.2] border-r border-border pr-6' : 'w-full'} overflow-y-auto custom-scrollbar`}>
+            {/* Tabs */}
+            <div className="flex space-x-2 border-b border-border mb-4">
+              <button
+                onClick={() => setGrantTab('system')}
+                className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
+                  grantTab === 'system' 
+                    ? 'border-primary text-primary' 
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Cấp qua username
+              </button>
+              <button
+                onClick={() => setGrantTab('email')}
+                className={`px-4 py-2 border-b-2 text-sm font-medium transition-colors ${
+                  grantTab === 'email' 
+                    ? 'border-primary text-primary' 
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Cấp qua mail
+              </button>
+            </div>
+
+            {grantTab === 'system' ? (
+              <div>
+                <label className="block text-sm font-medium mb-1">Người dùng nhận vé</label>
+                <SearchableSelect
+                  value={grantForm.user_id}
+                  onChange={v => setGrantForm(f => ({ ...f, user_id: v }))}
+                  placeholder="-- Chọn khách hàng --"
+                  searchPlaceholder="Tìm kiếm tên, email, SDT..."
+                  options={[
+                    ...users.map((u: any) => ({ value: u.id, label: `${u.full_name} (${u.email})` })),
+                  ]}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tên khách mời</label>
+                  <input
+                    type="text"
+                    placeholder="Nguyễn Văn A"
+                    value={grantForm.guest_name}
+                    onChange={e => setGrantForm(f => ({ ...f, guest_name: e.target.value }))}
+                    className="w-full h-11 px-3 rounded-xl border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email gửi vé</label>
+                  <input
+                    type="email"
+                    placeholder="nguyenvana@gmail.com"
+                    value={grantForm.guest_email}
+                    onChange={e => setGrantForm(f => ({ ...f, guest_email: e.target.value }))}
+                    className="w-full h-11 px-3 rounded-xl border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-border/50 pt-4 mt-2">
+              <div>
+                <label className="block text-sm font-medium mb-1">Sự kiện</label>
+                <SearchableSelect
+                  value={grantForm.event_id}
+                  onChange={v => {
+                     setGrantForm(f => ({ ...f, event_id: v, ticket_type_id: '' }))
+                     setSelectedSeats([])
+                  }}
+                  placeholder="-- Chọn sự kiện --"
+                  searchPlaceholder="Tìm kiếm sự kiện..."
+                  options={[
+                    ...events.map((e: any) => ({ value: e.id, label: e.title })),
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium mb-1">Loại vé</label>
+                <SearchableSelect
+                  value={grantForm.ticket_type_id}
+                  onChange={v => {
+                     setGrantForm(f => ({ ...f, ticket_type_id: v }))
+                     setSelectedSeats([]) // Reset seat selection if ticket type changes
+                  }}
+                  placeholder="-- Chọn loại vé --"
+                  searchPlaceholder="Tìm loại vé..."
+                  options={[
+                    ...ticketTypes.map((tt: any) => {
+                      const ttId = tt.id || tt._id;
+                      return { value: ttId, label: `${tt.name} - ${tt.price.toLocaleString('vi-VN')}đ (Còn: ${tt.quantity_total})` }
+                    }),
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Số lượng vé muốn cấp</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={grantForm.quantity}
+                  onChange={e => {
+                      const qty = parseInt(e.target.value) || 1
+                      setGrantForm(f => ({ ...f, quantity: qty }))
+                      // Retain only seats up to the new quantity
+                      setSelectedSeats(prev => prev.slice(0, qty))
+                  }}
+                  className="w-full h-11 px-3 rounded-xl border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm text-center font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="pt-6 flex gap-3">
+              <Button
+                onClick={handleGrant}
+                loading={grantTicketMutation.isPending}
+                className="flex-1"
+                disabled={Boolean(eventRoom && processedRoom?.seats?.some(s => s.isActive) && selectedSeats.length !== grantForm.quantity)}
+              >
+                Cấp ngay
+              </Button>
+              <Button variant="outline" onClick={() => setShowGrantModal(false)} className="flex-1">
+                Hủy
+              </Button>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Sự kiện</label>
-            <Select
-              value={grantForm.event_id}
-              onChange={v => setGrantForm(f => ({ ...f, event_id: v, ticket_type_id: '' }))}
-              placeholder="-- Chọn sự kiện --"
-              options={[
-                { value: '', label: '-- Chọn sự kiện --' },
-                ...events.map((e: any) => ({ value: e.id, label: e.title })),
-              ]}
-            />
-          </div>
+          {/* Right side Seat Map for granting tickets */}
+          {eventRoom && processedRoom?.seats?.some(s => s.isActive) && (
+            <div className="flex-[1.5] flex flex-col items-center bg-muted/20 border border-border rounded-xl p-4 overflow-y-auto custom-scrollbar relative">
+              <div className="w-full flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-lg">Sơ đồ ghế ngồi</h3>
+                  {grantForm.ticket_type_id ? (
+                      <span className={`text-xs px-3 py-1.5 rounded-full font-medium border ${selectedSeats.length === grantForm.quantity ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-primary/10 text-primary border-primary/20'}`}>
+                          Đã chọn {selectedSeats.length} / {grantForm.quantity} ghế
+                      </span>
+                  ) : (
+                      <span className="text-xs bg-amber-500/10 text-amber-500 px-3 py-1.5 rounded-full font-medium border border-amber-500/20">
+                          Hãy chọn loại vé trước
+                      </span>
+                  )}
+              </div>
+              
+              {isRoomsLoading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    Đang tải sơ đồ...
+                  </div>
+                ) : (
+                  <SeatMap 
+                    room={processedRoom || eventRoom} 
+                    selectedSeats={selectedSeats.map(s => s.seat)}
+                    onSeatToggle={handleSeatToggle}
+                    maxSelectable={grantForm.quantity} 
+                    soldSeats={soldSeats}
+                  />
+                )}
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Loại vé</label>
-            <Select
-              value={grantForm.ticket_type_id}
-              onChange={v => setGrantForm(f => ({ ...f, ticket_type_id: v }))}
-              placeholder="-- Chọn loại vé --"
-              options={[
-                { value: '', label: '-- Chọn loại vé --' },
-                ...ticketTypes.map((tt: any) => {
-                  const ttId = tt.id || tt._id;
-                  return { value: ttId, label: `${tt.name} - ${tt.price.toLocaleString('vi-VN')}đ (Còn: ${tt.quantity_total})` }
-                }),
-              ]}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Số lượng vé muốn cấp</label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={grantForm.quantity}
-              onChange={e => setGrantForm(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm"
-            />
-          </div>
-
-          <div className="pt-4 flex gap-3">
-            <Button
-              onClick={handleGrant}
-              loading={grantTicketMutation.isPending}
-              className="flex-1"
-            >
-              Cấp ngay
-            </Button>
-            <Button variant="outline" onClick={() => setShowGrantModal(false)} className="flex-1">
-              Hủy
-            </Button>
-          </div>
         </div>
       </Modal>
 

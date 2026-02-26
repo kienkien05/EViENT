@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Edit, Trash2, Ticket, Save, X } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Ticket, Save, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { eventService } from '@/services'
 import { Skeleton, TableRowSkeleton } from '@/components/ui/Skeleton'
@@ -104,6 +104,16 @@ export default function AdminTicketsPage() {
       newTicketTypes.splice(index, 1)
       saveEventMutation.mutate(newTicketTypes)
     }
+  }
+
+  const handleToggleVisibility = (index: number) => {
+    const newTicketTypes = [...ticketTypes]
+    const current = newTicketTypes[index]
+    newTicketTypes[index] = {
+      ...current,
+      status: current.status === 'hidden' ? 'active' : 'hidden'
+    }
+    saveEventMutation.mutate(newTicketTypes)
   }
 
   const handleSaveModal = () => {
@@ -222,12 +232,18 @@ export default function AdminTicketsPage() {
               ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   {ticketTypes.map((tt: any, index: number) => (
-                    <div key={tt.id || index} className="bg-background border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                    <div key={tt.id || index} className={cn(
+                      'bg-background border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow',
+                      tt.status === 'hidden' ? 'border-amber-500/40 bg-amber-50/50 dark:bg-amber-500/5' : 'border-border'
+                    )}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           <h3 className="font-semibold text-lg truncate flex items-center gap-2">
                             {tt.name}
-                            {tt.quantity_sold >= tt.quantity_total && (
+                            {tt.status === 'hidden' && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-0.5 rounded">Đang ẩn</span>
+                            )}
+                            {tt.quantity_sold >= tt.quantity_total && tt.status !== 'hidden' && (
                               <span className="text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive px-2 py-0.5 rounded">Hết vé</span>
                             )}
                           </h3>
@@ -236,6 +252,20 @@ export default function AdminTicketsPage() {
                           )}
                         </div>
                         <div className="flex gap-1 shrink-0">
+                          <Button
+                            variant="ghost" size="icon"
+                            onClick={() => handleToggleVisibility(index)}
+                            loading={saveEventMutation.isPending}
+                            className={cn(
+                              'h-8 w-8',
+                              tt.status === 'hidden'
+                                ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
+                            title={tt.status === 'hidden' ? 'Hiện loại vé trên trang bán' : 'Ẩn loại vé (chỉ dùng cấp thủ công)'}
+                          >
+                            {tt.status === 'hidden' ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => openEdit(tt, index)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                             <Edit className="size-3.5" />
                           </Button>

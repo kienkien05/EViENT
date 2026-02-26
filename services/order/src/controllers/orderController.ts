@@ -126,14 +126,16 @@ async function sendTicketNotifications(order: any, tickets: any[]) {
         const axios = (await import('axios')).default;
         const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
 
-        // In-app notification
-        await axios.post(`${notificationUrl}/api/notifications/user-notifications`, {
-            user_id: userId,
-            title: 'Đặt vé thành công',
-            message: `Bạn đã mua thành công ${requestedTotalQty} vé cho sự kiện "${event_snapshot?.title || 'Sự kiện'}".`,
-            type: 'ticket_booked',
-            link: '/my-tickets',
-        });
+        // In-app notification (skip for email-grant tickets with no userId)
+        if (userId) {
+            await axios.post(`${notificationUrl}/api/notifications/user-notifications`, {
+                user_id: userId,
+                title: 'Đặt vé thành công',
+                message: `Bạn đã mua thành công ${requestedTotalQty} vé cho sự kiện "${event_snapshot?.title || 'Sự kiện'}".`,
+                type: 'ticket_booked',
+                link: '/my-tickets',
+            });
+        }
 
         // Send emails
         if (buyer_info?.email && tickets && tickets.length > 0) {
@@ -148,6 +150,7 @@ async function sendTicketNotifications(order: any, tickets: any[]) {
                     tickets: [
                         {
                             ticket_code: t.ticketCode,
+                            qr_code: t.qrCode,
                             ticket_type_name: t.ticketTypeName,
                             seat: t.seatSnapshot
                                 ? `${t.seatSnapshot.row} - Số ${t.seatSnapshot.number}`
@@ -187,8 +190,12 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     } = req.body;
 
     // Allow admin to override the purchaser (granting tickets)
-    const isGrantingForOther = req.user!.role === 'admin' && customUserId;
-    const userId = isGrantingForOther ? customUserId : req.user!.id;
+    // For email grants, user_id is empty but payment_method is 'free'
+    const isGrantingTicket = req.user!.role === 'admin' && (customUserId || payment_method === 'free');
+    // For username grants: assign ticket to the selected user
+    // For email grants: set userId to null so ticket doesn't appear in admin's "My Tickets"
+    const isEmailGrant = isGrantingTicket && !customUserId && buyer_info?.email;
+    const userId = isEmailGrant ? null : (req.user!.role === 'admin' && customUserId) ? customUserId : req.user!.id;
 
     if (!items || items.length === 0) {
         return respond.error(res, 'Order must have at least one item');
@@ -212,9 +219,9 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
         );
         if (!tType) return respond.error(res, `Loại vé ${item.ticket_type_name} không tồn tại.`);
 
-        // Check per-ticket-type user limit
+        // Check per-ticket-type user limit (skip for email grants with no userId)
         const maxPerUser = tType.maxPerUser ?? -1;
-        if (maxPerUser !== -1) {
+        if (maxPerUser !== -1 && userId) {
             const userExistingForType = await Ticket.countDocuments({
                 eventId: event_id as any,
                 ticketTypeId: item.ticket_type_id as any,
@@ -295,7 +302,8 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     );
 
     // Determine if this is a free order (0 VND) or a paid order
-    const isFree = totalAmount === 0;
+    // Tickets granted by an admin are treated as free/paid immediately
+    const isFree = totalAmount === 0 || isGrantingTicket;
     const method = isFree ? 'free' : 'vnpay';
 
     const order = await Order.create({

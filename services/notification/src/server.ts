@@ -177,19 +177,44 @@ app.post('/api/notifications/send-ticket', [
 ], asyncHandler(async (req, res) => {
   const { email, tickets, event_title, event_date, event_location } = req.body;
 
-  const ticketRows = tickets.map((t: any) => `
-    <tr>
-      <td style="padding: 8px; border: 1px solid #e5e7eb;">${t.ticket_code}</td>
-      <td style="padding: 8px; border: 1px solid #e5e7eb;">${t.ticket_type_name}</td>
-      <td style="padding: 8px; border: 1px solid #e5e7eb;">${t.seat || 'N/A'}</td>
-    </tr>
-  `).join('');
+  // Build CID attachments for QR codes so email clients can display them
+  const attachments: any[] = [];
+  const ticketRows = tickets.map((t: any, idx: number) => {
+    const cidName = `qr_${idx}@evient`;
+    let qrHtml = '';
+
+    if (t.qr_code && t.qr_code.startsWith('data:image')) {
+      // Extract base64 content from data URL: "data:image/png;base64,xxxx"
+      const matches = t.qr_code.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (matches) {
+        attachments.push({
+          filename: `qr_${idx}.${matches[1]}`,
+          content: matches[2],
+          encoding: 'base64',
+          cid: cidName,
+        });
+        qrHtml = `<img src="cid:${cidName}" alt="QR" style="display: block; margin: 8px auto 0; width: 120px; height: 120px;" />`;
+      }
+    }
+
+    return `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">
+          <span style="font-weight: bold;">${t.ticket_code}</span><br>
+          ${qrHtml}
+        </td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; vertical-align: middle;">${t.ticket_type_name}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; vertical-align: middle;">${t.seat || 'N/A'}</td>
+      </tr>
+    `;
+  }).join('');
 
   const subject = `[EViENT] Xác nhận vé - ${event_title}`;
   const body = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #6366f1;">🎫 EViENT - Xác nhận vé</h2>
-      <p>Bạn đã đặt vé thành công cho sự kiện:</p>
+      <p style="font-size: 16px; color: #374151;"><strong>Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của EViENT!</strong></p>
+      <p>Bạn đã đăng ký/nhận vé thành công cho sự kiện:</p>
       <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
         <h3 style="margin: 0 0 8px 0;">${event_title}</h3>
         ${event_date ? `<p style="margin: 4px 0; color: #6b7280;">📅 ${event_date}</p>` : ''}
@@ -198,14 +223,14 @@ app.post('/api/notifications/send-ticket', [
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <thead>
           <tr style="background: #6366f1; color: white;">
-            <th style="padding: 8px; text-align: left;">Mã vé</th>
+            <th style="padding: 8px; text-align: center;">Mã vé & QR</th>
             <th style="padding: 8px; text-align: left;">Loại vé</th>
             <th style="padding: 8px; text-align: left;">Chỗ ngồi</th>
           </tr>
         </thead>
         <tbody>${ticketRows}</tbody>
       </table>
-      <p style="color: #6b7280; font-size: 14px;">Vui lòng mang theo mã QR khi tham gia sự kiện.</p>
+      <p style="color: #6b7280; font-size: 14px;">Vui lòng mang theo mã QR này khi tham gia sự kiện để check-in dễ dàng nhé!</p>
     </div>
   `;
 
@@ -223,6 +248,7 @@ app.post('/api/notifications/send-ticket', [
       to: email,
       subject,
       html: body,
+      attachments,
     });
 
     notification.status = 'sent';
