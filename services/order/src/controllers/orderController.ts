@@ -700,7 +700,13 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
     const filter: any = {};
     if (status) filter.status = status;
     if (eventId) filter.eventId = eventId;
-    if (search) filter.ticketCode = { $regex: search, $options: 'i' };
+    if (search) {
+        filter.$or = [
+            { ticketCode: { $regex: search, $options: 'i' } },
+            { 'buyerSnapshot.fullName': { $regex: search, $options: 'i' } },
+            { 'buyerSnapshot.email': { $regex: search, $options: 'i' } },
+        ];
+    }
 
     if (dateStr) {
         const dateQuery = new Date(dateStr);
