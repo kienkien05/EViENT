@@ -348,7 +348,7 @@ export default function AdminOrdersPage() {
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input type="text" placeholder="Tìm mã vé, tên, email..." value={search}
+          <input type="text" placeholder="Tìm mã vé..." value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-background outline-none focus:ring-2 focus:ring-ring text-sm" />
         </div>
