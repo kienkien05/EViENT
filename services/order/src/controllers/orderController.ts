@@ -68,10 +68,10 @@ async function generateTicketsForOrder(order: any, ticketStatus: 'valid' | 'pend
                 buyerSnapshot: buyer_info || undefined,
                 seatSnapshot: seatAssignment
                     ? {
-                          roomName: seatAssignment.roomName,
-                          row: seatAssignment.row,
-                          number: seatAssignment.number,
-                      }
+                        roomName: seatAssignment.roomName,
+                        row: seatAssignment.row,
+                        number: seatAssignment.number,
+                    }
                     : undefined,
             });
         }
@@ -339,16 +339,19 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
             process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/vnpay-return';
         const ipAddr = req.ip || req.socket?.remoteAddress || '127.0.0.1';
 
+        const timestamp = Date.now();
+        const txnRef = `${order._id.toString()}_${timestamp}`;
+
         const paymentUrl = buildPaymentUrl({
             amount: totalAmount,
-            orderId: order._id.toString(),
+            orderId: txnRef,
             orderInfo: `Thanh toan don hang ${order._id.toString()}`,
             ipAddr,
             returnUrl,
         });
 
-        // Save the txn ref (using order._id as txn ref)
-        order.vnpayTxnRef = order._id.toString();
+        // Save the txn ref
+        order.vnpayTxnRef = txnRef;
         await order.save();
 
         logger.info(
@@ -391,7 +394,8 @@ export const vnpayIpn = asyncHandler(async (req: Request, res: Response) => {
             return res.json(IpnFailChecksum);
         }
 
-        const orderId = verify.vnp_TxnRef;
+        const txnRef = verify.vnp_TxnRef;
+        const orderId = txnRef.split('_')[0];
         const order = await Order.findById(orderId);
 
         if (!order) {
@@ -449,7 +453,8 @@ export const vnpayReturn = asyncHandler(async (req: Request, res: Response) => {
     try {
         const verify = verifyReturn(req.query as any);
 
-        const orderId = verify.vnp_TxnRef;
+        const txnRef = verify.vnp_TxnRef;
+        const orderId = txnRef.split('_')[0];
         const order = await Order.findById(orderId);
 
         if (!verify.isVerified) {
@@ -538,6 +543,45 @@ export async function cancelExpiredOrders() {
         logger.info(`Cancelled ${expiredOrders.length} expired pending orders`);
     }
 }
+
+// ==================== GET /orders/:id/payment-url - Retry VNPay Payment ====================
+
+export const getPaymentUrlForOrder = asyncHandler(async (req: Request, res: Response) => {
+    const orderId = req.params.id;
+    const order = await Order.findOne({ _id: orderId, userId: req.user!.id });
+
+    if (!order) {
+        return respond.notFound(res, 'Không tìm thấy đơn hàng');
+    }
+
+    if (order.status !== 'pending') {
+        return respond.error(res, 'Chỉ có thể thanh toán đơn hàng đang chờ thanh toán', 400);
+    }
+
+    const returnUrl = process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/vnpay-return';
+    const ipAddr = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+
+    // Generate new txnRef to avoid VNPay duplicates
+    const timestamp = Date.now();
+    const txnRef = `${order._id.toString()}_${timestamp}`;
+
+    const paymentUrl = buildPaymentUrl({
+        amount: order.totalAmount,
+        orderId: txnRef,
+        orderInfo: `Thanh toan don hang ${order._id.toString()}`,
+        ipAddr,
+        returnUrl,
+    });
+
+    order.vnpayTxnRef = txnRef;
+    await order.save();
+
+    return respond.successWithMessage(
+        res,
+        { payment_url: paymentUrl },
+        'Tạo URL thanh toán thành công',
+    );
+});
 
 // ==================== GET /orders/my-tickets ====================
 
@@ -651,11 +695,24 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
     const status = req.query.status as string;
     const eventId = req.query.event_id as string;
     const search = req.query.search as string;
+    const dateStr = req.query.date as string;
 
     const filter: any = {};
     if (status) filter.status = status;
     if (eventId) filter.eventId = eventId;
     if (search) filter.ticketCode = { $regex: search, $options: 'i' };
+
+    if (dateStr) {
+        const dateQuery = new Date(dateStr);
+        if (!isNaN(dateQuery.getTime())) {
+            const nextDay = new Date(dateQuery);
+            nextDay.setDate(dateQuery.getDate() + 1);
+            filter.createdAt = {
+                $gte: dateQuery,
+                $lt: nextDay,
+            };
+        }
+    }
 
     const [tickets, total] = await Promise.all([
         Ticket.find(filter)
@@ -876,4 +933,35 @@ export const getRevenueReport = asyncHandler(async (req: Request, res: Response)
     const grandTotal = data.reduce((sum: number, item: any) => sum + item.totalRevenue, 0);
 
     respond.success(res, { data, grandTotal });
+});
+
+export const bulkUpdateTickets = asyncHandler(async (req: Request, res: Response) => {
+    const { ticketIds, status } = req.body;
+
+    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+        return respond.error(res, 'Mảng Ticket IDs không được trống');
+    }
+
+    if (!status || !['valid', 'used', 'cancelled'].includes(status)) {
+        return respond.error(res, 'Trạng thái không hợp lệ');
+    }
+
+    const result = await Ticket.updateMany(
+        { _id: { $in: ticketIds } },
+        { $set: { status } }
+    );
+
+    respond.successMessage(res, `Đã cập nhật trạng thái thành công cho ${result.modifiedCount} vé`);
+});
+
+export const bulkDeleteTickets = asyncHandler(async (req: Request, res: Response) => {
+    const { ticketIds } = req.body;
+
+    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+        return respond.error(res, 'Mảng Ticket IDs không được trống');
+    }
+
+    const result = await Ticket.deleteMany({ _id: { $in: ticketIds } });
+
+    respond.successMessage(res, `Đã xóa thành công ${result.deletedCount} vé`);
 });

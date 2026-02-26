@@ -424,6 +424,7 @@ function TicketDetailCard({
 }) {
   const statusConfig: Record<string, { label: string; color: string }> = {
     valid: { label: 'Hợp lệ', color: 'bg-green-500/10 text-green-600 border-green-500/20' },
+    pending: { label: 'Chờ thanh toán', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' },
     used: { label: 'Đã sử dụng', color: 'bg-gray-500/10 text-gray-500 border-gray-500/20' },
     cancelled: { label: 'Đã huỷ', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
   }
@@ -566,6 +567,13 @@ function TicketDetailCard({
         {mode === 'preview' && ticket.status === 'cancelled' && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-600 rounded-lg px-4 py-3 text-sm text-center">
             <p className="font-semibold">❌ Vé đã bị huỷ</p>
+          </div>
+        )}
+
+        {/* Pending warning (preview mode) */}
+        {mode === 'preview' && ticket.status === 'pending' && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 rounded-lg px-4 py-3 text-sm text-center">
+            <p className="font-semibold">⚠️ Vé chưa thanh toán</p>
           </div>
         )}
       </div>

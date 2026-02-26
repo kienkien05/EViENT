@@ -1,375 +1,233 @@
-# 🎫 EViENT — Hệ thống Quản lý Sự kiện & Bán vé trực tuyến
+<div align="center">
 
-> **EViENT** là nền tảng quản lý sự kiện toàn diện được xây dựng trên kiến trúc **Microservices**, cho phép tổ chức sự kiện, bán vé trực tuyến, quản lý phòng/chỗ ngồi và check-in bằng QR code.
+# 📦 vnpayjs
 
----
+[🇻🇳 Tiếng Việt](./README.md) | [🇺🇸 English](./README_en-US.md)
 
-## 📌 Tổng quan hệ thống
+[![NPM Version](https://img.shields.io/npm/v/vnpay)](https://www.npmjs.com/package/vnpay)
+[![Package License](https://img.shields.io/npm/l/vnpay)](https://www.npmjs.com/package/vnpay)
+[![NPM Downloads](https://img.shields.io/npm/d18m/vnpay)](https://www.npmjs.com/package/vnpay)
+[![GitHub Stars](https://img.shields.io/github/stars/lehuygiang28/vnpay)](https://github.com/lehuygiang28/vnpay)
+[![GitHub Issues](https://img.shields.io/github/issues/lehuygiang28/vnpay)](https://github.com/lehuygiang28/vnpay/issues)
+[![Coverage](https://img.shields.io/codecov/c/github/lehuygiang28/vnpay)](https://codecov.io/gh/lehuygiang28/vnpay)
 
-| Thành phần               | Công nghệ                               | Mô tả                                   |
-| ------------------------ | --------------------------------------- | --------------------------------------- |
-| **Frontend**             | React 18, Vite, TailwindCSS, TypeScript | Giao diện người dùng & quản trị         |
-| **API Gateway**          | Express.js, http-proxy-middleware       | Điều hướng request, rate limiting, CORS |
-| **Auth Service**         | Express.js, MongoDB, JWT, bcrypt        | Xác thực, phân quyền, quản lý user      |
-| **Event Service**        | Express.js, MongoDB, Cloudinary         | Quản lý sự kiện, phòng, banner, loại vé |
-| **Order Service**        | Express.js, MongoDB                     | Đặt vé, quản lý đơn hàng, QR code       |
-| **Notification Service** | Express.js, MongoDB, Nodemailer         | Gửi email OTP, xác nhận vé              |
-| **Database**             | MongoDB 7                               | Lưu trữ dữ liệu                         |
-| **Email (Dev)**          | MailHog                                 | Mock SMTP server cho development        |
-| **Cloud Storage**        | Cloudinary                              | Upload & quản lý hình ảnh               |
+**🚀 Thư viện Node.js hiện đại cho tích hợp cổng thanh toán [VNPay](https://vnpay.vn) vào ứng dụng của bạn.**
 
----
+_Hỗ trợ TypeScript • Tree-shaking • Modular imports • Minimal dependencies_
 
-## 🏗️ Kiến trúc Microservices
-
-```
-                    ┌──────────────────┐
-                    │    Frontend      │
-                    │  React + Vite    │
-                    │    :5173         │
-                    └────────┬─────────┘
-                             │
-                    ┌────────▼─────────┐
-                    │   API Gateway    │
-                    │     :3000        │
-                    │  (Proxy + CORS   │
-                    │  + Rate Limit)   │
-                    └────────┬─────────┘
-                             │
-          ┌──────────┬───────┼────────┬──────────────┐
-          │          │       │        │              │
-   ┌──────▼──┐ ┌────▼───┐ ┌─▼─────┐ ┌▼──────────┐ ┌▼───────────┐
-   │  Auth   │ │ Event  │ │ Order │ │Notification│ │   Upload   │
-   │ :3001   │ │ :3002  │ │ :3003 │ │   :3004    │ │ (via Auth) │
-   └────┬────┘ └───┬────┘ └──┬────┘ └─────┬──────┘ └────────────┘
-        │          │         │             │
-        └──────────┴─────────┴─────────────┘
-                         │
-                ┌────────▼─────────┐
-                │    MongoDB 7     │
-                │     :27017       │
-                └──────────────────┘
-```
+</div>
 
 ---
 
-## 🔑 Tính năng chính
+## ✨ Tính năng nổi bật
 
-### 👤 Phía Người dùng (User)
+<div align="center">
 
-- **Đăng ký / Đăng nhập** với OTP verification qua email
-- **Quên & đặt lại mật khẩu** qua email OTP
-- **Duyệt sự kiện** — trang chủ, danh sách, tìm kiếm, chi tiết sự kiện
-- **Mua vé trực tuyến** — chọn loại vé, số lượng, chỗ ngồi
-- **Quản lý vé** — xem vé đã mua, mã QR check-in
-- **Hồ sơ cá nhân** — cập nhật thông tin, avatar, đổi mật khẩu
-- **Liên hệ** — thông tin liên hệ & mạng xã hội
+|    🎯 **Dễ sử dụng**     |   🧩 **Modular**   | 📘 **TypeScript** |   ⚡ **Tối ưu**    |
+| :----------------------: | :----------------: | :---------------: | :----------------: |
+| API đơn giản & trực quan | Import theo module | Full type support | Tree-shaking ready |
 
-### 🛡️ Phía Quản trị (Admin)
+</div>
 
-- **Dashboard** — thống kê tổng quan
-- **Quản lý sự kiện** — CRUD sự kiện, loại vé, thời gian, banner
-- **Quản lý phòng & chỗ ngồi** — tạo/sửa phòng, cấu hình hàng ghế
-- **Quản lý đơn hàng** — xem, duyệt, huỷ đơn hàng
-- **Quản lý vé** — theo dõi trạng thái vé
-- **Quản lý người dùng** — khoá/mở tài khoản, phân quyền
-- **Quản lý banner** — CRUD banner trang chủ
-- **Quét QR check-in** — scan QR code để check-in vé
-- **Báo cáo** — thống kê doanh thu, vé bán
+### 🆕 **Mới trong v2.4.0**
+
+- 📦 **Import theo module** - Giảm kích thước bundle lên đến 80%
+- 🎯 **Types-only imports** - 0KB runtime cho TypeScript projects
+- ⚡ **Tối ưu build** - Code splitting và tree-shaking
+- 🔧 **Flexible endpoints** - Custom API endpoints
 
 ---
 
-## 📂 Cấu trúc dự án
+## 📚 Tài liệu
 
-```
-evient-app/
-├── .env.example              # Mẫu biến môi trường
-├── docker-compose.yml        # Docker config cho production
-├── package.json              # Monorepo scripts & dependencies
-├── tsconfig.base.json        # TypeScript config chung
-├── scripts/
-│   └── seed.ts               # Seed dữ liệu mẫu
-├── packages/
-│   └── shared/               # Shared library (types, middleware, utils)
-│       └── src/
-│           └── types/         # TypeScript interfaces & types
-├── services/
-│   ├── gateway/               # API Gateway (proxy, rate limit, CORS)
-│   ├── auth/                  # Auth Service (JWT, OTP, user CRUD)
-│   │   └── src/
-│   │       ├── controllers/   # authController, userController, uploadController
-│   │       ├── models/        # User, OtpCode models
-│   │       └── routes/
-│   ├── event/                 # Event Service
-│   │   └── src/
-│   │       ├── controllers/   # event, room, banner, seat controllers
-│   │       ├── models/        # Event, Room, Seat, Banner models
-│   │       └── routes/
-│   ├── order/                 # Order Service
-│   │   └── src/
-│   │       ├── controllers/   # order, ticket controllers
-│   │       ├── models/        # Order, Ticket models
-│   │       └── routes/
-│   └── notification/          # Notification Service
-│       └── src/
-│           └── server.ts      # Email sending (OTP, confirmations)
-└── frontend/                  # React SPA
-    ├── public/images/         # Static assets (logo, banners)
-    └── src/
-        ├── App.tsx            # Router config (21 routes)
-        ├── components/        # UI components & layouts
-        │   └── layout/        # UserLayout, AdminLayout
-        ├── pages/
-        │   ├── auth/          # Login, OTP, ForgotPassword, ResetPassword
-        │   ├── user/          # Home, Events, EventDetail, MyTickets, Profile, Contact, Search, Wallet
-        │   ├── admin/         # Dashboard, Events, Users, Tickets, Banners, Orders, Rooms, QRScanner, Reports
-        │   └── error/         # ForbiddenPage
-        ├── services/          # API service layer (Axios)
-        ├── stores/            # Zustand state management (auth, theme)
-        └── lib/               # Utility functions
-```
+<div align="center">
+
+| 📖 **Tài liệu**     | 🔗 **Link**                                                            | 📝 **Mô tả**                |
+| :------------------ | :--------------------------------------------------------------------- | :-------------------------- |
+| **Docs chính thức** | [vnpay.js.org](https://vnpay.js.org/)                                  | Tài liệu chi tiết với ví dụ |
+| **VNPay API**       | [sandbox.vnpayment.vn/apis](https://sandbox.vnpayment.vn/apis)         | Tài liệu chính thức VNPay   |
+| **GitHub**          | [github.com/lehuygiang28/vnpay](https://github.com/lehuygiang28/vnpay) | Source code & Issues        |
+
+</div>
 
 ---
 
-## 📊 Data Models
+## 🚀 Cài đặt
 
-### User
-
-| Field           | Type                          | Mô tả                     |
-| --------------- | ----------------------------- | ------------------------- |
-| email           | string                        | Email đăng nhập (unique)  |
-| fullName        | string                        | Họ tên                    |
-| role            | `user` \| `admin`             | Phân quyền                |
-| isActive        | boolean                       | Trạng thái tài khoản      |
-| avatarUrl       | string?                       | Ảnh đại diện (Cloudinary) |
-| phoneNumber     | string?                       | Số điện thoại             |
-| gender          | `male` \| `female` \| `other` | Giới tính                 |
-| passwordHistory | array                         | Lịch sử đổi mật khẩu      |
-
-### Event
-
-| Field               | Type                                                 | Mô tả             |
-| ------------------- | ---------------------------------------------------- | ----------------- |
-| title               | string                                               | Tên sự kiện       |
-| slug                | string                                               | URL-friendly slug |
-| description         | string?                                              | Mô tả ngắn        |
-| content             | string?                                              | Nội dung chi tiết |
-| startTime / endTime | Date                                                 | Thời gian diễn ra |
-| bannerImage         | string?                                              | Ảnh banner chính  |
-| category            | string?                                              | Danh mục          |
-| status              | `draft` \| `published` \| `cancelled` \| `completed` | Trạng thái        |
-| isHot               | boolean                                              | Sự kiện nổi bật   |
-| roomIds             | string[]                                             | Danh sách phòng   |
-| ticketTypes         | array                                                | Các loại vé       |
-
-### Order & Ticket
-
-| Field             | Type                                             | Mô tả                                      |
-| ----------------- | ------------------------------------------------ | ------------------------------------------ |
-| Order.items       | array                                            | Danh sách vé đặt (loại, số lượng, đơn giá) |
-| Order.totalAmount | number                                           | Tổng tiền                                  |
-| Order.status      | `pending` \| `paid` \| `cancelled` \| `refunded` | Trạng thái đơn                             |
-| Ticket.ticketCode | string                                           | Mã vé duy nhất                             |
-| Ticket.qrCode     | string                                           | QR code check-in                           |
-| Ticket.status     | `valid` \| `used` \| `cancelled`                 | Trạng thái vé                              |
-| Ticket.seatId     | string?                                          | Ghế đã chọn                                |
-
-### Room & Seat
-
-| Field            | Type    | Mô tả                 |
-| ---------------- | ------- | --------------------- |
-| Room.name        | string  | Tên phòng             |
-| Room.rows        | number  | Số hàng ghế           |
-| Room.seatsPerRow | number  | Số ghế mỗi hàng       |
-| Seat.row         | string  | Hàng (số)             |
-| Seat.number      | number  | Số ghế                |
-| Seat.isActive    | boolean | Ghế hoạt động         |
-| Seat.locks       | array   | Khoá ghế theo sự kiện |
-
----
-
-## 🔌 API Endpoints
-
-Tất cả API đều qua **Gateway** tại `http://localhost:3000/api`
-
-| Prefix                 | Service      | Mô tả                          |
-| ---------------------- | ------------ | ------------------------------ |
-| `/api/auth/*`          | Auth         | Đăng ký, đăng nhập, OTP, token |
-| `/api/users/*`         | Auth         | CRUD user, profile, avatar     |
-| `/api/upload/*`        | Auth         | Upload file lên Cloudinary     |
-| `/api/events/*`        | Event        | CRUD sự kiện                   |
-| `/api/rooms/*`         | Event        | CRUD phòng & chỗ ngồi          |
-| `/api/banners/*`       | Event        | CRUD banner                    |
-| `/api/ticket-types/*`  | Event        | Quản lý loại vé                |
-| `/api/orders/*`        | Order        | Đặt vé, quản lý đơn hàng       |
-| `/api/tickets/*`       | Order        | Quản lý vé, QR check-in        |
-| `/api/notifications/*` | Notification | Gửi thông báo, email           |
-| `/api/health`          | Gateway      | Health check                   |
-
----
-
-## 🚀 Hướng dẫn cài đặt & chạy
-
-### Yêu cầu
-
-- **Node.js** v18+
-- **MongoDB** Community Server 7+ (chạy trên port 27017)
-- **Git**
-
-### Bước 1 — Clone & cài đặt
+> [!TIP]
+> **NestJS users**: Sử dụng [`nestjs-vnpay`](https://github.com/lehuygiang28/nestjs-vnpay) - wrapper tích hợp sẵn cho NestJS.
 
 ```bash
-git clone https://github.com/kienkien05/new_ass_app.git
-cd new_ass_app
-npm install
+# NPM
+npm install vnpay
+
+# Yarn
+yarn add vnpay
+
+# PNPM
+pnpm install vnpay
 ```
 
-### Bước 2 — Cấu hình môi trường
+---
 
-```bash
-cp .env.example .env
-# Chỉnh sửa .env với thông tin Cloudinary, JWT secret, v.v.
+## 📦 Import Options (v2.4.0+)
+
+### 🏆 Import toàn bộ (Backward Compatible)
+
+```typescript
+import { VNPay, HashAlgorithm, ProductCode } from 'vnpay';
 ```
 
-### Bước 3 — Seed dữ liệu mẫu
+### 🦩 Import theo module (Recommended)
 
-```bash
-npm run seed
+```typescript
+import { VNPay } from 'vnpay/vnpay';
+import { HashAlgorithm, ProductCode } from 'vnpay/enums';
+import { VNP_VERSION, PAYMENT_ENDPOINT } from 'vnpay/constants';
+import { resolveUrlString, dateFormat } from 'vnpay/utils';
 ```
 
-> Tạo sẵn tài khoản và dữ liệu mẫu:
+### 📘 Types-only (TypeScript)
+
+```typescript
+import type { VNPayConfig, BuildPaymentUrl, Bank } from 'vnpay/types-only';
+```
+
+> [!WARNING]
+> **⚠️ QUAN TRỌNG: Sử dụng trên Client-side (Frontend)**
 >
-> - 👤 Admin: `admin@evient.vn` / `admin123`
-> - 👤 User: `user@evient.vn` / `user123`
-> - 🏠 3 phòng mẫu
-> - 🎉 3 sự kiện mẫu
-> - 🖼️ 2 banner
-
-### Bước 4 — Chạy hệ thống
-
-```bash
-npm run dev
-```
-
-> Lệnh này sẽ tự động:
+> **Thư viện VNPay chỉ dành cho Node.js backend** vì sử dụng các module như `fs`, `crypto` và các API chỉ có trên server.
 >
-> 1. Build shared package
-> 2. Khởi chạy 5 backend services (Gateway, Auth, Event, Order, Notification)
-> 3. Khởi chạy frontend (Vite dev server)
+> **❌ KHÔNG làm thế này trong React/Vue/Angular components:**
+>
+> ```typescript
+> import { VNPay } from 'vnpay'; // Error: Module not found: Can't resolve 'fs'
+> ```
+>
+> **✅ SỬ DỤNG như thế này cho frontend:**
+>
+> ```typescript
+> import type { VNPayConfig, BuildPaymentUrl, Bank, VerifyReturnUrl } from 'vnpay/types-only';
+> ```
+>
+> - **Backend (Node.js)**: Sử dụng import bình thường để xử lý thanh toán
+> - **Frontend (React/Vue/Angular)**: Chỉ import types để type checking
+> - **API calls**: Gọi backend APIs từ frontend thay vì import trực tiếp
 
-### Bước 5 — Truy cập
+## 💡 Cách sử dụng
 
-| Dịch vụ        | URL                              |
-| -------------- | -------------------------------- |
-| 🌐 Frontend    | http://localhost:5173            |
-| 🔌 API Gateway | http://localhost:3000/api/health |
+### 🔧 **Khởi tạo VNPay**
 
----
+```typescript
+import { VNPay, ignoreLogger } from 'vnpay';
 
-## 🐳 Docker Deployment
+const vnpay = new VNPay({
+    // ⚡ Cấu hình bắt buộc
+    tmnCode: '2QXUI4B4',
+    secureSecret: 'your-secret-key',
+    vnpayHost: 'https://sandbox.vnpayment.vn',
 
-```bash
-# Khởi chạy tất cả services + MongoDB + MailHog
-docker-compose up -d --build
+    // 🔧 Cấu hình tùy chọn
+    testMode: true, // Chế độ test
+    hashAlgorithm: 'SHA512', // Thuật toán mã hóa
+    enableLog: true, // Bật/tắt log
+    loggerFn: ignoreLogger, // Custom logger
 
-# Dừng services
-docker-compose down
+    // 🔧 Custom endpoints
+    endpoints: {
+        paymentEndpoint: 'paymentv2/vpcpay.html',
+        queryDrRefundEndpoint: 'merchant_webapi/api/transaction',
+        getBankListEndpoint: 'qrpayauth/api/merchant/get_bank_list',
+    },
+});
 ```
 
-| Container            | Port  |
-| -------------------- | ----- |
-| MongoDB              | 27017 |
-| MailHog SMTP         | 1025  |
-| MailHog Web UI       | 8025  |
-| API Gateway          | 3000  |
-| Auth Service         | 3001  |
-| Event Service        | 3002  |
-| Order Service        | 3003  |
-| Notification Service | 3004  |
+### 💳 **Tạo URL thanh toán**
+
+```typescript
+const paymentUrl = vnpay.buildPaymentUrl({
+    vnp_Amount: 100000, // 100,000 VND
+    vnp_IpAddr: '192.168.1.1',
+    vnp_ReturnUrl: 'https://yourapp.com/return',
+    vnp_TxnRef: 'ORDER_123',
+    vnp_OrderInfo: 'Thanh toán đơn hàng #123',
+});
+
+console.log('Payment URL:', paymentUrl);
+```
+
+### ✅ **Xác thực thanh toán**
+
+```typescript
+// Xác thực URL return
+const verify = vnpay.verifyReturnUrl(req.query);
+if (verify.isSuccess) {
+    console.log('✅ Thanh toán thành công!', verify.message);
+} else {
+    console.log('❌ Thanh toán thất bại:', verify.message);
+}
+```
 
 ---
 
-## ⚙️ Biến môi trường (.env)
+<!-- GitAds-Verify: AS4WTM39TY1WOG94V1FIXPB924R4LHF1 -->
 
-| Biến                        | Mô tả                     | Mặc định                    |
-| --------------------------- | ------------------------- | --------------------------- |
-| `MONGODB_URI`               | MongoDB connection string | `mongodb://localhost:27017` |
-| `JWT_SECRET`                | Secret key cho JWT        | —                           |
-| `JWT_EXPIRES_IN`            | Thời hạn token            | `7d`                        |
-| `GATEWAY_PORT`              | Port API Gateway          | `3000`                      |
-| `AUTH_SERVICE_PORT`         | Port Auth Service         | `3001`                      |
-| `EVENT_SERVICE_PORT`        | Port Event Service        | `3002`                      |
-| `ORDER_SERVICE_PORT`        | Port Order Service        | `3003`                      |
-| `NOTIFICATION_SERVICE_PORT` | Port Notification Service | `3004`                      |
-| `CLOUDINARY_CLOUD_NAME`     | Cloudinary cloud name     | —                           |
-| `CLOUDINARY_API_KEY`        | Cloudinary API key        | —                           |
-| `CLOUDINARY_API_SECRET`     | Cloudinary API secret     | —                           |
-| `SMTP_HOST`                 | SMTP server host          | `localhost`                 |
-| `SMTP_PORT`                 | SMTP server port          | `1025`                      |
-| `VITE_API_URL`              | Frontend API URL          | `http://localhost:3000/api` |
-| `CORS_ORIGIN`               | Allowed CORS origin       | `http://localhost:5173`     |
+[![Sponsored by GitAds](https://gitads.dev/v1/ad-serve?source=lehuygiang28/vnpay@github)](https://gitads.dev/v1/ad-track?source=lehuygiang28/vnpay@github)
 
 ---
 
-## 🛠️ Tech Stack chi tiết
+## 🤝 Hỗ trợ & Đóng góp
 
-### Backend
+<div align="center">
 
-- **Runtime**: Node.js + TypeScript
-- **Framework**: Express.js
-- **Authentication**: JWT + bcrypt
-- **OTP**: 6-digit code qua email
-- **Database**: MongoDB (Mongoose ODM)
-- **API Pattern**: RESTful + Proxy Gateway
-- **Security**: Helmet, CORS, Rate Limiting
-- **Logging**: Custom logger (Winston-based)
-- **File Upload**: Cloudinary
+**🎉 vnpayjs là dự án mã nguồn mở và hoàn toàn miễn phí!**
 
-### Frontend
+_Nếu thư viện giúp ích cho bạn, hãy tặng cho project này một ⭐ hoặc mời một ly cà phê ☕ và nhấn vào các quảng cáo trên để mình nhận được 1 khoản tiền nhỏ để duy trì project_
 
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite 5
-- **Styling**: TailwindCSS 3
-- **Routing**: React Router v7
-- **State Management**: Zustand 5
-- **Data Fetching**: TanStack React Query 5
-- **HTTP Client**: Axios
-- **UI Components**: Radix UI, Lucide Icons
-- **Animations**: Framer Motion
-- **Charts**: Recharts
-- **QR Scanner**: html5-qrcode
-- **Notifications**: Sonner (toast)
-- **Date Utils**: date-fns
+<br/>
 
-### DevOps
+[![GitHub Stars](https://img.shields.io/github/stars/lehuygiang28/vnpay?style=social)](https://github.com/lehuygiang28/vnpay)
 
-- **Containerization**: Docker + Docker Compose
-- **Monorepo**: npm workspaces
-- **Development**: ts-node-dev, concurrently
-- **Linting**: ESLint
+<br/>
 
----
+<a href="https://www.buymeacoffee.com/lehuygiang28" target="_blank">
+  <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=lehuygiang28&button_colour=1a1b27&font_colour=ffffff&font_family=Lato&outline_colour=ffffff&coffee_colour=FFDD00" height="48" alt="Buy me a coffee">
+</a>
+<a href="https://me.momo.vn/lehuygiang28" target="_blank">
+  <img src="https://raw.githubusercontent.com/lehuygiang28/about-me/refs/heads/main/public/images/momo-donation.png" height="48" alt="Momo donation">
+</a>
 
-## 📜 NPM Scripts
+</div>
 
-| Script                     | Mô tả                                       |
-| -------------------------- | ------------------------------------------- |
-| `npm run dev`              | Chạy toàn bộ hệ thống (services + frontend) |
-| `npm run dev:services`     | Chạy 5 backend services                     |
-| `npm run dev:frontend`     | Chạy frontend                               |
-| `npm run dev:gateway`      | Chạy API Gateway                            |
-| `npm run dev:auth`         | Chạy Auth Service                           |
-| `npm run dev:event`        | Chạy Event Service                          |
-| `npm run dev:order`        | Chạy Order Service                          |
-| `npm run dev:notification` | Chạy Notification Service                   |
-| `npm run build`            | Build tất cả packages                       |
-| `npm run build:shared`     | Build shared package                        |
-| `npm run seed`             | Seed dữ liệu mẫu (xoá cũ + tạo mới)         |
-| `npm run docker:up`        | Docker Compose up                           |
-| `npm run docker:down`      | Docker Compose down                         |
-| `npm run docker:build`     | Docker Compose build & up                   |
+### 🛠️ **Tham gia đóng góp**
+
+<div align="center">
+
+| 📋 **Bước** | 🔗 **Hành động**                                                                |
+| :---------: | :------------------------------------------------------------------------------ |
+|    **1**    | Đọc [Hướng dẫn đóng góp](.github/CONTRIBUTING.md)                               |
+|    **2**    | Fork repo và tạo Pull Request                                                   |
+|    **3**    | Tham gia thảo luận trong [Issues](https://github.com/lehuygiang28/vnpay/issues) |
+
+</div>
+
+### 👥 **Contributors**
+
+<div align="center">
+
+_Cảm ơn tất cả những người đã đóng góp cho dự án:_
+
+[![Contributors](https://contrib.rocks/image?repo=lehuygiang28/vnpay&max=20)](https://github.com/lehuygiang28/vnpay/graphs/contributors)
+
+</div>
 
 ---
+
+## 📄 Giấy phép
+
+<div align="center">
+
+**[MIT License](LICENSE) © [Lê Huy Giang](https://github.com/lehuygiang28)**
 
 ## 👥 Tài khoản mặc định
 
