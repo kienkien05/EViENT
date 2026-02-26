@@ -6,7 +6,7 @@ import { notificationService, orderService } from '@/services'
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<'activities' | 'revenue'>('activities')
   const [activityDates, setActivityDates] = useState({ start: '', end: '' })
-  const [revenueDates, setRevenueDates] = useState({ start: '', end: '' })
+  const [revenueDates, setRevenueDates] = useState({ start: '', end: '', search: '' })
 
   const { data: activitiesData, isLoading: isLoadingActivities } = useQuery({
     queryKey: ['admin', 'reports-activities', activityDates],
@@ -21,7 +21,8 @@ export default function ReportsPage() {
     queryKey: ['admin', 'reports-revenue', revenueDates],
     queryFn: () => orderService.getRevenueReport({ 
       startDate: revenueDates.start || undefined, 
-      endDate: revenueDates.end || undefined 
+      endDate: revenueDates.end || undefined,
+      eventName: revenueDates.search || undefined 
     }).then((r: any) => r.data),
     enabled: activeTab === 'revenue',
   })
@@ -181,8 +182,18 @@ export default function ReportsPage() {
                   />
                 </div>
               </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">Tên sự kiện</label>
+                <input 
+                  type="text" 
+                  placeholder="Tìm theo tên..."
+                  value={revenueDates.search}
+                  onChange={(e) => setRevenueDates({ ...revenueDates, search: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
               <button 
-                onClick={() => setRevenueDates({ start: '', end: '' })}
+                onClick={() => setRevenueDates({ start: '', end: '', search: '' })}
                 className="h-10 px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md text-sm font-medium whitespace-nowrap"
               >
                 Xóa bộ lọc

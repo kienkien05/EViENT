@@ -34,10 +34,12 @@ export default function DashboardPage() {
 
       const activities: any[] = []
       tickets.forEach((t: any) => {
+        const buyerName = t.buyer?.full_name || t.buyer?.email || 'Khách vãng lai';
+
         activities.push({
           id: `ticket-${t.id}`,
           type: 'ticket',
-          title: `Vé ${t.ticket_code} đã được bán cho ${t.buyer_info?.full_name || t.buyer_info?.email || 'Khách vãng lai'}`,
+          title: `Vé ${t.ticket_code} đã được bán cho ${buyerName}`,
           time: new Date(t.created_at || new Date()).getTime(),
           icon: Ticket,
           color: 'text-orange-500 bg-orange-500/10'

@@ -84,7 +84,7 @@ export const orderService = {
 
     getSoldSeats: (eventId: string) => api.get(`/orders/events/${eventId}/sold-seats`),
 
-    getRevenueReport: (params?: { startDate?: string; endDate?: string }) =>
+    getRevenueReport: (params?: { startDate?: string; endDate?: string; eventName?: string }) =>
         api.get('/orders/revenue-report', { params }),
 
     deleteOrder: (id: string) => api.delete(`/orders/${id}`),

@@ -100,6 +100,7 @@ export function transformTicket(ticket: any) {
   return {
     id: ticket._id?.toString() || ticket.id,
     order_id: ticket.orderId?.toString(),
+    user_id: ticket.userId?.toString(),
     ticket_code: ticket.ticketCode,
     qr_code: ticket.qrCode,
     status: ticket.status,
