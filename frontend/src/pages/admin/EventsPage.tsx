@@ -355,7 +355,7 @@ export default function AdminEventsPage() {
             </div>
 
             {/* Desktop table */}
-            <div className="hidden md:block bg-card border border-border rounded-xl overflow-x-auto">
+            <div className="hidden md:block bg-card border border-border rounded-xl overflow-visible">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-border bg-muted/50">
