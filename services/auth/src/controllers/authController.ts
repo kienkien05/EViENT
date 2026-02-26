@@ -297,9 +297,18 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   if (full_name !== undefined) updateData.fullName = full_name;
   if (phone_number !== undefined) updateData.phoneNumber = phone_number;
   if (facebook_url !== undefined) updateData.facebookUrl = facebook_url;
-  if (gender !== undefined) updateData.gender = gender;
+  
+  if (gender !== undefined) {
+    if (gender === '') updateData.$unset = { ...updateData.$unset, gender: 1 };
+    else updateData.gender = gender;
+  }
+  
   if (address !== undefined) updateData.address = address;
-  if (date_of_birth !== undefined) updateData.dateOfBirth = date_of_birth;
+  
+  if (date_of_birth !== undefined) {
+    if (date_of_birth === '') updateData.$unset = { ...updateData.$unset, dateOfBirth: 1 };
+    else updateData.dateOfBirth = date_of_birth;
+  }
 
   // Handle avatar upload via Cloudinary (if file present)
   if (req.file) {
@@ -307,9 +316,21 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
     updateData.avatarUrl = (req.file as any).path || (req.file as any).secure_url;
   }
 
+  const mongoUpdate: any = {};
+  if (Object.keys(updateData).length > 0) {
+    // Separate $unset from other normal update fields
+    if (updateData.$unset) {
+      mongoUpdate.$unset = updateData.$unset;
+      delete updateData.$unset;
+    }
+    if (Object.keys(updateData).length > 0) {
+      mongoUpdate.$set = updateData;
+    }
+  }
+
   const user = await User.findByIdAndUpdate(
     req.user!.id,
-    { $set: updateData },
+    mongoUpdate,
     { new: true, runValidators: true }
   ).lean();
 

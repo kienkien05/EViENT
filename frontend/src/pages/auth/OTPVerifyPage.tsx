@@ -144,6 +144,9 @@ export default function OTPVerifyPage() {
           <p className="mt-2 text-muted-foreground text-sm">
             Nhập mã 6 số đã gửi đến <span className="font-medium text-foreground">{state?.email}</span>
           </p>
+          <p className="mt-1 text-xs text-orange-500 font-medium">
+            Mã OTP sẽ hết hạn sau 5 phút
+          </p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
