@@ -9,7 +9,7 @@ import { Request, Response } from 'express';
 import { customAlphabet } from 'nanoid';
 import QRCode from 'qrcode';
 import {
-    InpOrderAlreadyConfirmed,
+    IpnOrderAlreadyConfirmed,
     IpnFailChecksum,
     IpnInvalidAmount,
     IpnOrderNotFound,
@@ -68,10 +68,10 @@ async function generateTicketsForOrder(order: any, ticketStatus: 'valid' | 'pend
                 buyerSnapshot: buyer_info || undefined,
                 seatSnapshot: seatAssignment
                     ? {
-                          roomName: seatAssignment.roomName,
-                          row: seatAssignment.row,
-                          number: seatAssignment.number,
-                      }
+                        roomName: seatAssignment.roomName,
+                        row: seatAssignment.row,
+                        number: seatAssignment.number,
+                    }
                     : undefined,
             });
         }
@@ -339,16 +339,19 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
             process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/vnpay-return';
         const ipAddr = req.ip || req.socket?.remoteAddress || '127.0.0.1';
 
+        const timestamp = Date.now();
+        const txnRef = `${order._id.toString()}_${timestamp}`;
+
         const paymentUrl = buildPaymentUrl({
             amount: totalAmount,
-            orderId: order._id.toString(),
+            orderId: txnRef,
             orderInfo: `Thanh toan don hang ${order._id.toString()}`,
             ipAddr,
             returnUrl,
         });
 
-        // Save the txn ref (using order._id as txn ref)
-        order.vnpayTxnRef = order._id.toString();
+        // Save the txn ref
+        order.vnpayTxnRef = txnRef;
         await order.save();
 
         logger.info(
@@ -391,7 +394,8 @@ export const vnpayIpn = asyncHandler(async (req: Request, res: Response) => {
             return res.json(IpnFailChecksum);
         }
 
-        const orderId = verify.vnp_TxnRef;
+        const txnRef = verify.vnp_TxnRef;
+        const orderId = txnRef.split('_')[0];
         const order = await Order.findById(orderId);
 
         if (!order) {
@@ -409,7 +413,7 @@ export const vnpayIpn = asyncHandler(async (req: Request, res: Response) => {
 
         if (order.status === 'paid') {
             logger.info(`VNPay IPN: order ${orderId} already confirmed`);
-            return res.json(InpOrderAlreadyConfirmed);
+            return res.json(IpnOrderAlreadyConfirmed);
         }
 
         if (verify.isSuccess) {
@@ -424,13 +428,17 @@ export const vnpayIpn = asyncHandler(async (req: Request, res: Response) => {
             return res.json(IpnSuccess);
         } else {
             // Payment failed — cancel order and tickets, restore quantities
-            order.status = 'cancelled';
-            await order.save();
+            if (order.status === 'pending') {
+                order.status = 'cancelled';
+                await order.save();
 
-            await cancelTicketsForOrder(order._id);
-            await restoreTicketQuantities(order);
+                await cancelTicketsForOrder(order._id);
+                await restoreTicketQuantities(order);
 
-            logger.info(`VNPay IPN: order ${orderId} payment failed, cancelled`);
+                logger.info(`VNPay IPN: order ${orderId} payment failed, cancelled`);
+            } else {
+                logger.info(`VNPay IPN: order ${orderId} payment failed but order is already ${order.status}`);
+            }
             return res.json(IpnSuccess); // Still return success to VNPay (we received the notification)
         }
     } catch (error: any) {
@@ -445,7 +453,8 @@ export const vnpayReturn = asyncHandler(async (req: Request, res: Response) => {
     try {
         const verify = verifyReturn(req.query as any);
 
-        const orderId = verify.vnp_TxnRef;
+        const txnRef = verify.vnp_TxnRef;
+        const orderId = txnRef.split('_')[0];
         const order = await Order.findById(orderId);
 
         if (!verify.isVerified) {
@@ -518,17 +527,61 @@ export async function cancelExpiredOrders() {
     });
 
     for (const order of expiredOrders) {
-        order.status = 'cancelled';
-        await order.save();
-        await cancelTicketsForOrder(order._id);
-        await restoreTicketQuantities(order);
-        logger.info(`Auto-cancelled expired order ${order._id}`);
+        const result = await Order.updateOne(
+            { _id: order._id, status: 'pending' },
+            { $set: { status: 'cancelled' } }
+        );
+
+        if (result.modifiedCount > 0) {
+            await cancelTicketsForOrder(order._id);
+            await restoreTicketQuantities(order);
+            logger.info(`Auto-cancelled expired order ${order._id}`);
+        }
     }
 
     if (expiredOrders.length > 0) {
         logger.info(`Cancelled ${expiredOrders.length} expired pending orders`);
     }
 }
+
+// ==================== GET /orders/:id/payment-url - Retry VNPay Payment ====================
+
+export const getPaymentUrlForOrder = asyncHandler(async (req: Request, res: Response) => {
+    const orderId = req.params.id;
+    const order = await Order.findOne({ _id: orderId, userId: req.user!.id });
+
+    if (!order) {
+        return respond.notFound(res, 'Không tìm thấy đơn hàng');
+    }
+
+    if (order.status !== 'pending') {
+        return respond.error(res, 'Chỉ có thể thanh toán đơn hàng đang chờ thanh toán', 400);
+    }
+
+    const returnUrl = process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/vnpay-return';
+    const ipAddr = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+
+    // Generate new txnRef to avoid VNPay duplicates
+    const timestamp = Date.now();
+    const txnRef = `${order._id.toString()}_${timestamp}`;
+
+    const paymentUrl = buildPaymentUrl({
+        amount: order.totalAmount,
+        orderId: txnRef,
+        orderInfo: `Thanh toan don hang ${order._id.toString()}`,
+        ipAddr,
+        returnUrl,
+    });
+
+    order.vnpayTxnRef = txnRef;
+    await order.save();
+
+    return respond.successWithMessage(
+        res,
+        { payment_url: paymentUrl },
+        'Tạo URL thanh toán thành công',
+    );
+});
 
 // ==================== GET /orders/my-tickets ====================
 
@@ -605,7 +658,6 @@ export const getSoldSeats = asyncHandler(async (req: Request, res: Response) => 
     const tickets = await Ticket.find({
         eventId: eventId as any,
         status: { $in: ['valid', 'used'] },
-        route: { $exists: false },
     })
         .select('seatSnapshot')
         .lean();
@@ -643,11 +695,24 @@ export const getTickets = asyncHandler(async (req: Request, res: Response) => {
     const status = req.query.status as string;
     const eventId = req.query.event_id as string;
     const search = req.query.search as string;
+    const dateStr = req.query.date as string;
 
     const filter: any = {};
     if (status) filter.status = status;
     if (eventId) filter.eventId = eventId;
     if (search) filter.ticketCode = { $regex: search, $options: 'i' };
+
+    if (dateStr) {
+        const dateQuery = new Date(dateStr);
+        if (!isNaN(dateQuery.getTime())) {
+            const nextDay = new Date(dateQuery);
+            nextDay.setDate(dateQuery.getDate() + 1);
+            filter.createdAt = {
+                $gte: dateQuery,
+                $lt: nextDay,
+            };
+        }
+    }
 
     const [tickets, total] = await Promise.all([
         Ticket.find(filter)
@@ -745,7 +810,6 @@ export const getTicketInfo = asyncHandler(async (req: Request, res: Response) =>
                     fullName: user.full_name || user.fullName || '',
                     email: user.email || '',
                 };
-                await ticket.save();
                 logger.info(
                     `Backfilled buyerSnapshot for ticket ${ticket.ticketCode}: ${user.full_name || user.fullName}`,
                 );
@@ -766,8 +830,39 @@ export const resendTicketEmail = asyncHandler(async (req: Request, res: Response
         return respond.notFound(res, 'Ticket not found');
     }
 
-    logger.info(`[TODO] Resend email for ticket ${ticket.ticketCode}`);
-    respond.successMessage(res, 'Ticket email resent successfully');
+    const email = ticket.buyerSnapshot?.email;
+    if (!email) {
+        return respond.error(res, 'Vé không có địa chỉ email người mua', 400);
+    }
+
+    try {
+        const axios = (await import('axios')).default;
+        const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004';
+        
+        await axios.post(`${notificationUrl}/api/notifications/send-ticket`, {
+            email: email,
+            event_title: ticket.eventSnapshot?.title || 'Sự kiện',
+            event_date: ticket.eventSnapshot?.startTime
+                ? new Date(ticket.eventSnapshot.startTime).toLocaleString('vi-VN')
+                : undefined,
+            event_location: ticket.eventSnapshot?.location || undefined,
+            tickets: [
+                {
+                    ticket_code: ticket.ticketCode,
+                    ticket_type_name: ticket.ticketTypeName,
+                    seat: ticket.seatSnapshot
+                        ? `${ticket.seatSnapshot.row} - Số ${ticket.seatSnapshot.number}`
+                        : undefined,
+                },
+            ],
+        });
+        
+        logger.info(`Resent email for ticket ${ticket.ticketCode} to ${email}`);
+        respond.successMessage(res, 'Gửi lại email vé thành công');
+    } catch (err: any) {
+        logger.error(`Failed to resend email for ticket ${ticket.ticketCode}:`, err.message);
+        return respond.error(res, 'Lỗi khi gửi lại email', 500);
+    }
 });
 
 export const deleteOrder = asyncHandler(async (req: Request, res: Response) => {
@@ -838,4 +933,35 @@ export const getRevenueReport = asyncHandler(async (req: Request, res: Response)
     const grandTotal = data.reduce((sum: number, item: any) => sum + item.totalRevenue, 0);
 
     respond.success(res, { data, grandTotal });
+});
+
+export const bulkUpdateTickets = asyncHandler(async (req: Request, res: Response) => {
+    const { ticketIds, status } = req.body;
+
+    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+        return respond.error(res, 'Mảng Ticket IDs không được trống');
+    }
+
+    if (!status || !['valid', 'used', 'cancelled'].includes(status)) {
+        return respond.error(res, 'Trạng thái không hợp lệ');
+    }
+
+    const result = await Ticket.updateMany(
+        { _id: { $in: ticketIds } },
+        { $set: { status } }
+    );
+
+    respond.successMessage(res, `Đã cập nhật trạng thái thành công cho ${result.modifiedCount} vé`);
+});
+
+export const bulkDeleteTickets = asyncHandler(async (req: Request, res: Response) => {
+    const { ticketIds } = req.body;
+
+    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+        return respond.error(res, 'Mảng Ticket IDs không được trống');
+    }
+
+    const result = await Ticket.deleteMany({ _id: { $in: ticketIds } });
+
+    respond.successMessage(res, `Đã xóa thành công ${result.deletedCount} vé`);
 });

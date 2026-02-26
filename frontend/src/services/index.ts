@@ -1,169 +1,176 @@
-import api from './api'
+import api from './api';
 
 export const authService = {
-  register: (data: { email: string; password: string; full_name: string }) =>
-    api.post('/auth/register', data),
+    register: (data: { email: string; password: string; full_name: string }) =>
+        api.post('/auth/register', data),
 
-  verifyRegister: (data: { email: string; otp: string; password: string; full_name: string }) =>
-    api.post('/auth/verify-register', data),
+    verifyRegister: (data: { email: string; otp: string; password: string; full_name: string }) =>
+        api.post('/auth/verify-register', data),
 
-  login: (data: { email: string; password: string }) =>
-    api.post('/auth/login', data),
+    login: (data: { email: string; password: string }) => api.post('/auth/login', data),
 
-  verifyLogin: (data: { email: string; otp: string }) =>
-    api.post('/auth/verify-login', data),
+    verifyLogin: (data: { email: string; otp: string }) => api.post('/auth/verify-login', data),
 
-  forgotPassword: (email: string) =>
-    api.post('/auth/forgot-password', { email }),
+    forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
 
-  resetPassword: (data: { email: string; otp: string; new_password: string }) =>
-    api.post('/auth/reset-password', data),
+    resetPassword: (data: { email: string; otp: string; new_password: string }) =>
+        api.post('/auth/reset-password', data),
 
-  getProfile: () =>
-    api.get('/auth/profile'),
+    getProfile: () => api.get('/auth/profile'),
 
-  updateProfile: (data: FormData | Record<string, any>) =>
-    api.put('/auth/profile', data, {
-      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
-    }),
+    updateProfile: (data: FormData | Record<string, any>) =>
+        api.put('/auth/profile', data, {
+            headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+        }),
 
-  deleteProfile: () =>
-    api.delete('/auth/profile'),
-}
+    deleteProfile: () => api.delete('/auth/profile'),
+};
 
 export const userService = {
-  getUsers: (params?: { page?: number; limit?: number; search?: string; role?: string; status?: string }) =>
-    api.get('/users', { params }),
+    getUsers: (params?: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        role?: string;
+        status?: string;
+    }) => api.get('/users', { params }),
 
-  getUserById: (id: string) =>
-    api.get(`/users/${id}`),
+    getUserById: (id: string) => api.get(`/users/${id}`),
 
-  createUser: (data: Record<string, any>) =>
-    api.post('/users', data),
+    createUser: (data: Record<string, any>) => api.post('/users', data),
 
-  updateUser: (id: string, data: Record<string, any>) =>
-    api.put(`/users/${id}`, data),
+    updateUser: (id: string, data: Record<string, any>) => api.put(`/users/${id}`, data),
 
-  deleteUser: (id: string) =>
-    api.delete(`/users/${id}`),
+    deleteUser: (id: string) => api.delete(`/users/${id}`),
 
-  toggleStatus: (id: string) =>
-    api.patch(`/users/${id}/toggle-status`),
-}
+    toggleStatus: (id: string) => api.patch(`/users/${id}/toggle-status`),
+};
 
 export const eventService = {
-  getEvents: (params?: { page?: number; limit?: number; search?: string; location?: string; date?: string; status?: string; time_status?: string }) =>
-    api.get('/events', { params }),
+    getEvents: (params?: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        location?: string;
+        date?: string;
+        status?: string;
+        time_status?: string;
+    }) => api.get('/events', { params }),
 
-  getFeaturedEvents: () =>
-    api.get('/events/featured'),
+    getFeaturedEvents: () => api.get('/events/featured'),
 
-  getEventById: (id: string) =>
-    api.get(`/events/${id}`),
+    getEventById: (id: string) => api.get(`/events/${id}`),
 
-  createEvent: (data: Record<string, any>) =>
-    api.post('/events', data),
+    createEvent: (data: Record<string, any>) => api.post('/events', data),
 
-  updateEvent: (id: string, data: Record<string, any>) =>
-    api.put(`/events/${id}`, data),
+    updateEvent: (id: string, data: Record<string, any>) => api.put(`/events/${id}`, data),
 
-  deleteEvent: (id: string) =>
-    api.delete(`/events/${id}`),
-}
+    deleteEvent: (id: string) => api.delete(`/events/${id}`),
+};
 
 export const orderService = {
-  createOrder: (data: Record<string, any>) =>
-    api.post('/orders', data),
+    createOrder: (data: Record<string, any>) => api.post('/orders', data),
 
-  getMyTickets: (params?: { page?: number; limit?: number; status?: string; search?: string; location?: string; date?: string }) =>
-    api.get('/orders/my-tickets', { params }),
+    getMyTickets: (params?: {
+        page?: number;
+        limit?: number;
+        status?: string;
+        search?: string;
+        location?: string;
+        date?: string;
+    }) => api.get('/orders/my-tickets', { params }),
 
-  getRemainingTickets: (eventId: string) =>
-    api.get(`/orders/remaining/${eventId}`),
+    getRemainingTickets: (eventId: string) => api.get(`/orders/remaining/${eventId}`),
 
-  getSoldSeats: (eventId: string) =>
-    api.get(`/orders/events/${eventId}/sold-seats`),
+    getSoldSeats: (eventId: string) => api.get(`/orders/events/${eventId}/sold-seats`),
 
-  getRevenueReport: (params?: { startDate?: string; endDate?: string }) =>
-    api.get('/orders/revenue-report', { params }),
+    getRevenueReport: (params?: { startDate?: string; endDate?: string }) =>
+        api.get('/orders/revenue-report', { params }),
 
-  deleteOrder: (id: string) =>
-    api.delete(`/orders/${id}`),
-}
+    deleteOrder: (id: string) => api.delete(`/orders/${id}`),
+
+    getPaymentUrl: (orderId: string) => api.get(`/orders/${orderId}/payment-url`),
+};
 
 export const ticketService = {
-  getTickets: (params?: { page?: number; limit?: number; status?: string; event_id?: string; search?: string }) =>
-    api.get('/tickets', { params }),
+    getTickets: (params?: {
+        page?: number;
+        limit?: number;
+        status?: string;
+        event_id?: string;
+        search?: string;
+    }) => api.get('/tickets', { params }),
 
-  validateQR: (ticketCode: string) =>
-    api.post('/tickets/validate-qr', { ticket_code: ticketCode }),
+    validateQR: (ticketCode: string) =>
+        api.post('/tickets/validate-qr', { ticket_code: ticketCode }),
 
-  getTicketInfo: (code: string) =>
-    api.get(`/tickets/info/${code}`),
+    getTicketInfo: (code: string) => api.get(`/tickets/info/${code}`),
 
-  resendEmail: (ticketId: string) =>
-    api.post('/tickets/resend-email', { ticket_id: ticketId }),
+    resendEmail: (ticketId: string) => api.post('/tickets/resend-email', { ticket_id: ticketId }),
 
-  updateTicket: (id: string, data: Record<string, any>) =>
-    api.put(`/tickets/${id}`, data),
-}
+    updateTicket: (id: string, data: Record<string, any>) => api.put(`/tickets/${id}`, data),
+
+    bulkUpdateTickets: (ticketIds: string[], status: string) =>
+        api.put('/tickets/bulk-update', { ticketIds, status }),
+
+    bulkDeleteTickets: (ticketIds: string[]) =>
+        api.delete('/tickets/bulk-delete', { data: { ticketIds } }),
+};
 
 export const roomService = {
-  getRooms: () =>
-    api.get('/rooms'),
+    getRooms: () => api.get('/rooms'),
 
-  createRoom: (data: { name: string; rows: number; seats_per_row: number }) =>
-    api.post('/rooms', data),
+    createRoom: (data: { name: string; rows: number; seats_per_row: number }) =>
+        api.post('/rooms', data),
 
-  updateRoom: (id: string, data: Record<string, any>) =>
-    api.put(`/rooms/${id}`, data),
+    updateRoom: (id: string, data: Record<string, any>) => api.put(`/rooms/${id}`, data),
 
-  updateRoomSeatsBatch: (id: string, updates: { id: string, isActive: boolean }[]) =>
-    api.put(`/rooms/${id}/seats`, { updates }),
-  updateRoomSeatLocksBatch: (id: string, updates: { id: string, eventId: string, ticketTypeId: string | null, action: 'add' | 'remove' }[]) =>
-    api.put(`/rooms/${id}/seat-locks`, { updates }),
-  deleteRoom: (id: string) =>
-    api.delete(`/rooms/${id}`),
-}
+    updateRoomSeatsBatch: (id: string, updates: { id: string; isActive: boolean }[]) =>
+        api.put(`/rooms/${id}/seats`, { updates }),
+    updateRoomSeatLocksBatch: (
+        id: string,
+        updates: {
+            id: string;
+            eventId: string;
+            ticketTypeId: string | null;
+            action: 'add' | 'remove';
+        }[],
+    ) => api.put(`/rooms/${id}/seat-locks`, { updates }),
+    deleteRoom: (id: string) => api.delete(`/rooms/${id}`),
+};
 
 export const bannerService = {
-  getBanners: (active?: boolean) =>
-    api.get('/banners', { params: active !== undefined ? { active } : {} }),
+    getBanners: (active?: boolean) =>
+        api.get('/banners', { params: active !== undefined ? { active } : {} }),
 
-  createBanner: (data: Record<string, any>) =>
-    api.post('/banners', data),
+    createBanner: (data: Record<string, any>) => api.post('/banners', data),
 
-  updateBanner: (id: string, data: Record<string, any>) =>
-    api.put(`/banners/${id}`, data),
+    updateBanner: (id: string, data: Record<string, any>) => api.put(`/banners/${id}`, data),
 
-  deleteBanner: (id: string) =>
-    api.delete(`/banners/${id}`),
-}
+    deleteBanner: (id: string) => api.delete(`/banners/${id}`),
+};
 
 export const uploadService = {
-  upload: (file: File, folder?: string) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    if (folder) formData.append('folder', folder)
-    return api.post('/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
-}
+    upload: (file: File, folder?: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (folder) formData.append('folder', folder);
+        return api.post('/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    },
+};
 
 export const notificationService = {
-  getNotifications: (params?: { page?: number; limit?: number }) =>
-    api.get('/notifications/user-notifications', { params }),
+    getNotifications: (params?: { page?: number; limit?: number }) =>
+        api.get('/notifications/user-notifications', { params }),
 
-  getUnreadCount: () =>
-    api.get('/notifications/unread-count'),
+    getUnreadCount: () => api.get('/notifications/unread-count'),
 
-  markAsRead: (id: string) =>
-    api.patch(`/notifications/user-notifications/${id}/read`),
+    markAsRead: (id: string) => api.patch(`/notifications/user-notifications/${id}/read`),
 
-  markAllAsRead: () =>
-    api.patch('/notifications/read-all'),
+    markAllAsRead: () => api.patch('/notifications/read-all'),
 
-  getActivities: (params?: { startDate?: string; endDate?: string }) =>
-    api.get('/notifications/activities', { params }),
-}
+    getActivities: (params?: { startDate?: string; endDate?: string }) =>
+        api.get('/notifications/activities', { params }),
+};
