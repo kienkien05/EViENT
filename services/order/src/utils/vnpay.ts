@@ -1,6 +1,6 @@
 import { createLogger } from '@evient/shared';
 import { HashAlgorithm, ProductCode, VNPay, ignoreLogger } from 'vnpay';
-import type { ReturnQueryFromVNPay, VerifyReturnUrl } from 'vnpay/types-only';
+import type { ReturnQueryFromVNPay, VerifyReturnUrl } from 'vnpay';
 
 const logger = createLogger('vnpay');
 

@@ -1,32 +1,23 @@
-version: "3.8"
+version: '3.8'
 
 services:
   # ==================== MongoDB ====================
   mongodb:
-    image: mongo:4.4
-    platform: linux/amd64
+    image: mongo:7
     container_name: evient-mongodb
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongodb_data:/data/db
     environment:
       MONGO_INITDB_DATABASE: evient_auth
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo --quiet
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ==================== MailHog ====================
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: evient-mailhog
-    restart: unless-stopped
-    ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
 
   # ==================== API Gateway ====================
   gateway:
@@ -36,7 +27,7 @@ services:
     container_name: evient-gateway
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       GATEWAY_PORT: 3000
       AUTH_SERVICE_URL: http://auth:3001
@@ -58,7 +49,7 @@ services:
     container_name: evient-auth
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
       AUTH_SERVICE_PORT: 3001
       MONGODB_URI: mongodb://mongodb:27017
@@ -83,7 +74,7 @@ services:
     container_name: evient-event
     restart: unless-stopped
     ports:
-      - "3002:3002"
+      - '3002:3002'
     environment:
       EVENT_SERVICE_PORT: 3002
       MONGODB_URI: mongodb://mongodb:27017
@@ -104,7 +95,7 @@ services:
     container_name: evient-order
     restart: unless-stopped
     ports:
-      - "3003:3003"
+      - '3003:3003'
     environment:
       ORDER_SERVICE_PORT: 3003
       MONGODB_URI: mongodb://mongodb:27017
@@ -127,7 +118,7 @@ services:
     container_name: evient-notification
     restart: unless-stopped
     ports:
-      - "3004:3004"
+      - '3004:3004'
     environment:
       NOTIFICATION_SERVICE_PORT: 3004
       MONGODB_URI: mongodb://mongodb:27017
@@ -140,6 +131,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+
 
 volumes:
   mongodb_data:
