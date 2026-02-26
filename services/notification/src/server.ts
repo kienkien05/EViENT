@@ -212,7 +212,7 @@ app.post('/api/notifications/send-ticket', [
   const subject = `[EViENT] Xác nhận vé - ${event_title}`;
   const body = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #6366f1;">🎫 EViENT - Xác nhận vé</h2>
+      <h2 style="color: #6366f1; text-align: center;">🎫 EViENT - Xác nhận vé</h2>
       <p style="font-size: 16px; color: #374151;"><strong>Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của EViENT!</strong></p>
       <p>Bạn đã đăng ký/nhận vé thành công cho sự kiện:</p>
       <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">

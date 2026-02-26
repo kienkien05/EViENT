@@ -143,8 +143,8 @@ async function sendTicketNotifications(order: any, tickets: any[]) {
                 return axios.post(`${notificationUrl}/api/notifications/send-ticket`, {
                     email: buyer_info.email,
                     event_title: event_snapshot?.title || 'Sự kiện',
-                    event_date: event_snapshot?.startTime
-                        ? new Date(event_snapshot.startTime).toLocaleString('vi-VN')
+                    event_date: (event_snapshot?.startTime || event_snapshot?.start_time)
+                        ? new Date(event_snapshot.startTime || event_snapshot.start_time).toLocaleString('vi-VN')
                         : undefined,
                     event_location: event_snapshot?.location || undefined,
                     tickets: [
