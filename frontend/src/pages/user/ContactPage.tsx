@@ -10,32 +10,32 @@ const contactInfo = [
   {
     icon: Phone,
     label: 'Điện thoại',
-    value: '0123 456 789',
-    href: 'tel:0123456789',
+    value: '0944 745 228',
+    href: 'tel:0944745228',
     color: 'text-green-500',
     bg: 'bg-green-500/10',
   },
   {
     icon: Mail,
     label: 'Email',
-    value: 'contact@evient.vn',
-    href: 'mailto:contact@evient.vn',
+    value: 'kessoku.eventvn@gmail.com',
+    href: 'mailto:kessoku.eventvn@gmail.com',
     color: 'text-red-500',
     bg: 'bg-red-500/10',
   },
   {
     icon: Facebook,
     label: 'Facebook',
-    value: 'EViENT Official',
-    href: 'https://facebook.com/evient',
+    value: 'Kessoku Event',
+    href: 'https://www.facebook.com/Kessoku.Event',
     color: 'text-blue-500',
     bg: 'bg-blue-500/10',
   },
   {
     icon: MessageCircle,
     label: 'Zalo',
-    value: '0123 456 789',
-    href: 'https://zalo.me/0123456789',
+    value: '0944 745 228',
+    href: 'https://zalo.me/0944745228',
     color: 'text-blue-400',
     bg: 'bg-blue-400/10',
   },
@@ -53,7 +53,7 @@ export default function ContactPage() {
           >
             <h1 className="text-3xl sm:text-4xl font-bold">Liên hệ với chúng tôi</h1>
             <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-              Đội ngũ EViENT luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ qua bất kỳ kênh nào bên dưới.
+              Đội ngũ Kessoku Event luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ qua bất kỳ kênh nào bên dưới.
             </p>
           </motion.div>
         </div>
