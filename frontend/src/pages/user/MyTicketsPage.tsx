@@ -1,7 +1,8 @@
 import { Select } from '@/components/ui/Select';
 import { CardSkeleton } from '@/components/ui/Skeleton';
-import { cn, formatDate, formatPrice } from '@/lib/utils';
+import { cn, formatDate, formatDateTime, formatPrice } from '@/lib/utils';
 import { orderService } from '@/services';
+import { useAuthStore } from '@/stores/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Calendar, CreditCard, Filter, Loader2, MapPin, Search, Ticket, X } from 'lucide-react';
@@ -23,6 +24,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function MyTicketsPage() {
+    const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [location, setLocation] = useState('');
     const [date, setDate] = useState('');
@@ -33,7 +35,7 @@ export default function MyTicketsPage() {
     const activeFiltersCount = [location, date, status].filter(Boolean).length;
 
     const { data, isLoading } = useQuery({
-        queryKey: ['my-tickets', { location, date, status, search: searchQuery }],
+        queryKey: ['my-tickets', user?.id, { location, date, status, search: searchQuery }],
         queryFn: () =>
             orderService
                 .getMyTickets({
@@ -292,7 +294,7 @@ export default function MyTicketsPage() {
                                                 Vé đã được sử dụng
                                             </p>
                                             <p className="text-xs sm:text-sm mt-1">
-                                                Vào lúc: {formatDate(ticket.used_at)}
+                                                Vào lúc: {formatDateTime(ticket.used_at)}
                                             </p>
                                         </div>
                                     ) : ticket.status === 'cancelled' ? (
