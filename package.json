@@ -9,7 +9,7 @@
     "frontend"
   ],
   "scripts": {
-    "predev": "npm run build:shared",
+    "predev": "node scripts/predev.js",
     "build:shared": "cd packages/shared && npm run build",
     "dev:gateway": "ts-node-dev -r dotenv/config --project services/gateway/tsconfig.json --respawn --transpile-only services/gateway/src/server.ts",
     "dev:auth": "ts-node-dev -r dotenv/config --project services/auth/tsconfig.json --respawn --transpile-only services/auth/src/server.ts",
