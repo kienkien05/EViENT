@@ -10,8 +10,8 @@ const contactInfo = [
   {
     icon: Phone,
     label: 'Điện thoại',
-    value: '0944 745 228',
-    href: 'tel:0944745228',
+    value: '0983 732 666',
+    href: 'tel:0983732666',
     color: 'text-green-500',
     bg: 'bg-green-500/10',
   },
@@ -34,8 +34,8 @@ const contactInfo = [
   {
     icon: MessageCircle,
     label: 'Zalo',
-    value: '0944 745 228',
-    href: 'https://zalo.me/0944745228',
+    value: '0983 732 666',
+    href: 'https://zalo.me/0983732666',
     color: 'text-blue-400',
     bg: 'bg-blue-400/10',
   },
