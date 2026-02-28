@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Trash2, Edit2 } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { ticketService, userService, eventService, orderService, roomService } from '@/services'
 import { TableRowSkeleton } from '@/components/ui/Skeleton'
@@ -64,6 +64,8 @@ export default function AdminOrdersPage() {
   })
 
   const tickets = data?.data || []
+  const pagination = data?.pagination
+  const totalPages = pagination?.totalPages || 1
   const users = usersData?.data || []
   const events = eventsData?.data || []
 
@@ -501,6 +503,67 @@ export default function AdminOrdersPage() {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 bg-card border border-border rounded-xl px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Trang <span className="font-semibold text-foreground">{page}</span> / <span className="font-semibold text-foreground">{totalPages}</span>
+            {pagination?.total != null && (
+              <span className="ml-2">— Tổng <span className="font-semibold text-foreground">{pagination.total}</span> vé</span>
+            )}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              className="gap-1"
+            >
+              <ChevronLeft className="size-4" /> Trước
+            </Button>
+            {/* Page number buttons */}
+            <div className="hidden sm:flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNum: number
+                if (totalPages <= 7) {
+                  pageNum = i + 1
+                } else if (page <= 4) {
+                  pageNum = i + 1
+                } else if (page >= totalPages - 3) {
+                  pageNum = totalPages - 6 + i
+                } else {
+                  pageNum = page - 3 + i
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={cn(
+                      'min-w-[36px] h-9 rounded-lg text-sm font-medium transition-colors',
+                      page === pageNum
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'hover:bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              className="gap-1"
+            >
+              Sau <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Grant Ticket Modal */}
       <Modal isOpen={showGrantModal} onClose={() => setShowGrantModal(false)} title="Cấp vé thủ công" size={eventRoom && processedRoom?.seats?.some(s => s.isActive) ? "lg" : "md"}>
