@@ -9,7 +9,7 @@ import { getImageUrl, formatDate, cn } from '@/lib/utils'
 export default function SearchPage() {
   const [searchParams] = useSearchParams()
   const q = searchParams.get('q') || ''
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   // Query Events
   const { data: eventsRes, isLoading: isEventsLoading } = useQuery({
@@ -20,7 +20,7 @@ export default function SearchPage() {
 
   // Query Tickets (if authenticated)
   const { data: ticketsRes, isLoading: isTicketsLoading } = useQuery({
-    queryKey: ['search-tickets', q],
+    queryKey: ['search-tickets', user?.id, q],
     queryFn: () => orderService.getMyTickets({ search: q, limit: 20 }).then((r) => r.data),
     enabled: !!q && isAuthenticated,
   })
