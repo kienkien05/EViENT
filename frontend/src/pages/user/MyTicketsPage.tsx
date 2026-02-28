@@ -1,6 +1,6 @@
 import { Select } from '@/components/ui/Select';
 import { CardSkeleton } from '@/components/ui/Skeleton';
-import { cn, formatDate, formatPrice } from '@/lib/utils';
+import { cn, formatDate, formatDateTime, formatPrice } from '@/lib/utils';
 import { orderService } from '@/services';
 import { useAuthStore } from '@/stores/authStore';
 import { useQuery } from '@tanstack/react-query';
@@ -294,7 +294,7 @@ export default function MyTicketsPage() {
                                                 Vé đã được sử dụng
                                             </p>
                                             <p className="text-xs sm:text-sm mt-1">
-                                                Vào lúc: {formatDate(ticket.used_at)}
+                                                Vào lúc: {formatDateTime(ticket.used_at)}
                                             </p>
                                         </div>
                                     ) : ticket.status === 'cancelled' ? (
